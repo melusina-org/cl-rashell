@@ -20,7 +20,7 @@
   (:program "/bin/cp"
    :documentation "Run cp(1) on PATHNAME-LIST and DESTINATION."
    :reference "http://pubs.opengroup.org/onlinepubs/9699919799/utilities/cp.html"
-   :argv-rest (append (rashell::ensure-list pathname-list) (list destination))))
+   :rest (append (rashell::ensure-list pathname-list) (list destination))))
 
 (rashell:define-command test/mkdir (pathname-list)
   ((mode :option "-m" :to-string (lambda (mode) (format nil "~3,'0O" mode)))
@@ -28,10 +28,10 @@
   (:program "/bin/mkdir"
    :documentation "Run mkdir(1) on PATHNAME."
    :reference "http://pubs.opengroup.org/onlinepubs/9699919799/utilities/mkdir.html"
-   :argv-rest (rashell::ensure-list pathname-list)))
+   :rest (rashell::ensure-list pathname-list)))
 
 (define-testcase test-define-command/baseline ()
-  (let ((cp (test/cp '(#p"/dev/null") #p"/nonexistant" :workdir #p"/" :force t :recursive t)))
+  (let ((cp (test/cp '(#p"/dev/null") #p"/nonexistant" :directory #p"/" :force t :recursive t)))
     (assert-equal
      (slot-value cp 'rashell::argv)
      '("-R" "-f" "/dev/null" "/nonexistant"))))
@@ -42,9 +42,34 @@
      (slot-value mkdir 'rashell::argv)
      '("-m" "755" "/nonexistant"))))
 
+(define-testcase test-arranged-conversation/baseline ()
+  (let ((arranged-conversation
+          (rashell:arranged-conversation
+           '((:write-output-line "EHLO")
+             (:read-input-line "USERNAME email@invalid.org")
+             (:read-input-line "PASSWORD NotVerySecret")
+             (:write-output-line "WELCOME email@invalid.org")
+             (:exit 0)))))
+    (unwind-protect
+         (progn
+           (rashell:run-command arranged-conversation :input :stream :output :stream :error :stream)
+           (assert-string= "EHLO"
+                           (read-line (rashell:command-output arranged-conversation)))
+           (write-line "USERNAME email@invalid.org" (rashell:command-input arranged-conversation))
+           (finish-output (rashell:command-input arranged-conversation))
+           (write-line "PASSWORD NotVerySecret" (rashell:command-input arranged-conversation))
+           (finish-output (rashell:command-input arranged-conversation))
+           (assert-string= "WELCOME email@invalid.org"
+                           (read-line (rashell:command-output arranged-conversation)))
+           (rashell:wait-command arranged-conversation)
+           (assert-eql :EXITED (rashell:command-status arranged-conversation))
+           (assert-eql 0 (nth-value 1 (rashell:command-status arranged-conversation))))
+      (rashell:kill-command arranged-conversation :kill))))
+
 (define-testcase rashell-testsuite()
   "Run tests for the rashell module."
   (test-define-command/baseline)
-  (test-define-command/option-to-string))
+  (test-define-command/option-to-string)
+  (test-arranged-conversation/baseline))
 
 ;;;; End of file `rashell.lisp'

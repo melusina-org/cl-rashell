@@ -15,7 +15,17 @@
   (:use #:common-lisp)
   (:export
    #:command
-   #:define-command))
+   #:define-command
+   #:command-p
+   #:command-input
+   #:command-output
+   #:command-error
+   #:command-status
+   #:run-command
+   #:wait-command
+   #:kill-command
+   #:close-command
+   #:arranged-conversation))
 
 (defpackage #:rashell-user
   (:use #:common-lisp #:rashell))
