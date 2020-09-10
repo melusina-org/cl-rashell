@@ -79,6 +79,13 @@ The ENVIRONMENT must be a sequence whose terms are:
 
 When the ENVIRONMENT is NIL, then the environment of the calling process
 is inherited.")
+   (object-of-output-line
+    :initarg :object-of-output-line
+    :initform nil
+    :documentation
+    "When provided, a function to interpret output of the program as an object stream.
+The provided function should convert a trimmed output line to the desired value.  The
+conversion is only used when operation the command as a query.")
    (process
     :initform nil
     :documentation
@@ -173,12 +180,24 @@ The SPEC is a property list where the following properties are allowed:
     A form to evalute in order to produce remaining arguments on the command line.
     (The arguments are sometimes denoted as “rest arguments.”
 
+  :OBJECT-OF-OUTPUT-LINE
+    When provided, a function to interpret output of the program as an object stream.
+    The provided function should convert a trimmed output line to the desired value.  The
+    conversion is only used when operating the command as a query.
+
+    When this function returns a second value equal to :DROP, the returned value should be
+    dropped from the stream.
+
+    See `DO-QUERY' and `RUN-QUERY'.
+
 TODO
 - Describe the ENVIRONMENT parameter.
 - Describe the WORKDIR parameter.
 "
   (let ((docstring
           (getf spec :documentation))
+        (object-of-output-line
+          (getf spec :object-of-output-line))
         (defun-argv
           (concatenate 'list argv '(&key) '(directory environment) (mapcar #'first options)))
         (program
@@ -201,6 +220,7 @@ TODO
                         :argv command-argv
                         :directory directory
                         :environment environment
+                        :object-of-output-line ,object-of-output-line
                         :documentation ,docstring)))))
 
 
@@ -393,9 +413,9 @@ When the command is still :PENDING it returns immediately.
 Returns COMMAND.")
   #+sbcl
   (:method ((command command) &optional check-for-stopped)
-    (and
-     (sb-ext:process-wait (slot-value command 'process) check-for-stopped)
-     command)))
+    (progn
+      (sb-ext:process-wait (slot-value command 'process) check-for-stopped)
+      command)))
 
 (defgeneric close-command (command)
   (:documentation
@@ -439,7 +459,19 @@ resumed by sending the :CONTINUE signal.~%"))
       (:exited
        (format stream "The command terminated normally by calling exit with the status code ~D.~%" code))
       (:signaled
-       (format stream "The command terminated because it received the signal ~D." code)))))
+       (format stream "The command terminated because it received the signal ~D." code))))
+  (when (command-output command)
+    (format stream "~&Output Stream:~%")
+    (if (open-stream-p (command-output command))
+        (format stream "  The output stream of the command is open and ~S could be read from it.~%"
+                (peek-char nil (command-output command) nil nil))
+        (format stream "  The output stream of the command is closed.~%")))
+  (when (command-error command)
+    (format stream "~&Error Stream:~%")
+    (if (open-stream-p (command-error command))
+        (format stream "  The error stream of the command is open and ~S could be read from it.~%"
+                (peek-char nil (command-error command) nil nil))
+        (format stream "  The error stream of the command is closed.~%"))))
 
 
 ;;;;
@@ -664,5 +696,84 @@ are returned as second and third value."
               nil
               (get-output-stream-string command-output)
               (get-output-stream-string command-error)))))))))
+
+
+;;;;
+;;;; Use a command as a query
+;;;;
+
+(defvar *query-output-line-number* nil
+  "This variable is bound in the main loop of DO-QUERY and exposes the output line number.")
+
+(defun do-query/loop (command process-one-line prepare-result)
+  (declare (optimize (debug 3)))
+  (run-command command :input nil :output :stream :error :stream)
+  (let
+      ((output-stream
+         (command-output command))
+       (error-stream
+         (command-error command))
+       (object-of-output-line
+         (slot-value command 'object-of-output-line))
+       (accumulated-error
+         (make-string-output-stream))
+       (*query-output-line-number*
+         0))
+    (labels
+        ((is-output-available-p ()
+           (peek-char nil output-stream))
+         (read-output-line ()
+           (incf *query-output-line-number*)
+           (if object-of-output-line
+               (funcall object-of-output-line (read-line output-stream))
+               (read-line output-stream)))
+         (read-error ()
+           (loop for error-char = (read-char-no-hang error-stream)
+                 while error-char
+                 do (write-char error-char accumulated-error))))
+      (loop while (or (open-stream-p output-stream) (open-stream-p error-stream))
+            do (handler-case
+                   (when (open-stream-p error-stream)
+                     (read-error))
+                 (end-of-file (condition)
+                   (declare (ignore condition))
+                   (close error-stream)))
+            do (handler-case
+                   (when (and (open-stream-p output-stream) (is-output-available-p))
+                     (multiple-value-bind (object dropflag) (read-output-line)
+                       (unless (eq :drop dropflag) 
+                         (funcall process-one-line object))))
+                 (end-of-file (condition)
+                   (declare (ignore condition))
+                   (close output-stream))))
+      (wait-command command)
+      (multiple-value-bind (status code) (command-status command)
+        (cond
+          ((and (eq status :exited) (= code 0))
+           (funcall prepare-result))
+          (t
+           (error 'command-error
+                  :command command
+                  :status status
+                  :code code
+                  :output nil
+                  :error (get-output-stream-string accumulated-error))))))))
+
+(defmacro do-query ((var command &optional result) &body body)
+  "Run a query process running the given COMMAND and process output lines.
+
+The VAR is successfully bound to each available line produced by COMMAND,
+and BODY is executed for each of these lines.  In the particular case where
+the COMMAND defines an OBJECT-OF-OUTPUT-LINE, the VAR is bound to the return
+value applied to the current line, instead of the actual line.
+
+The returning form is RESULT."
+  `(do-query/loop ,command (lambda (,var) ,@body) (lambda () ,result)))
+
+(defun run-query (command)
+  "Run a query process running the given COMMAND and return the list of output lines."
+  (let (answer)
+    (do-query (line command (nreverse answer))
+      (push line answer))))
 
 ;;;; End of file `rashell.lisp'

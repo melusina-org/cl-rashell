@@ -27,7 +27,10 @@
    #:close-command
    #:arranged-conversation
    #:run-tool
-   #:run-test))
+   #:run-test
+   #:run-query
+   #:do-query
+   #:*query-output-line-number*))
 
 (defpackage #:rashell-user
   (:use #:common-lisp #:rashell))

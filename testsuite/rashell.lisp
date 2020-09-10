@@ -13,7 +13,7 @@
 
 (in-package #:rashell/test)
 
-(rashell:define-command test/cp (pathname-list destination)
+(rashell:define-command cp (pathname-list destination)
   ((follow :flag "-H")
    (force :flag "-f")
    (recursive :flag "-R"))
@@ -22,7 +22,7 @@
    :reference "http://pubs.opengroup.org/onlinepubs/9699919799/utilities/cp.html"
    :rest (append (rashell::ensure-list pathname-list) (list destination))))
 
-(rashell:define-command test/mkdir (pathname-list)
+(rashell:define-command mkdir (pathname-list)
   ((mode :option "-m" :to-string (lambda (mode) (format nil "~3,'0O" mode)))
    (create-intermediate :flag "-p"))
   (:program "/bin/mkdir"
@@ -31,13 +31,13 @@
    :rest (rashell::ensure-list pathname-list)))
 
 (define-testcase test-define-command/baseline ()
-  (let ((cp (test/cp '(#p"/dev/null") #p"/nonexistant" :directory #p"/" :force t :recursive t)))
+  (let ((cp (cp '(#p"/dev/null") #p"/nonexistant" :directory #p"/" :force t :recursive t)))
     (assert-equal
      (slot-value cp 'rashell::argv)
      '("-R" "-f" "/dev/null" "/nonexistant"))))
 
 (define-testcase test-define-command/option-to-string ()
-  (let ((mkdir (test/mkdir #p"/nonexistant" :mode #O755)))
+  (let ((mkdir (mkdir #p"/nonexistant" :mode #O755)))
     (assert-equal
      (slot-value mkdir 'rashell::argv)
      '("-m" "755" "/nonexistant"))))
@@ -91,12 +91,44 @@
       (assert-eql :EXITED (rashell:command-status arranged-conversation))
       (assert-eql 0 (nth-value 1 (rashell:command-status arranged-conversation))))))
 
+(define-testcase test-run-query/baseline ()
+  (let ((arranged-conversation
+          (rashell:arranged-conversation
+           '((:write-output-line "A")
+             (:write-output-line "B")
+             (:exit 0)))))
+    (let ((lines (rashell:run-query arranged-conversation)))
+      (assert= 2 (length lines))
+      (assert-string= "A" (first lines))
+      (assert-string= "B" (second lines))
+      (assert-eql :EXITED (rashell:command-status arranged-conversation))
+      (assert-eql 0 (nth-value 1 (rashell:command-status arranged-conversation))))))
+
+(define-testcase test-run-query/object-of-output-line ()
+  (let ((arranged-conversation
+          (rashell:arranged-conversation
+           '((:write-output-line "Head")
+             (:write-output-line "A")
+             (:write-output-line "B")
+             (:exit 0)))))
+    (setf (slot-value arranged-conversation 'rashell::object-of-output-line)
+          (lambda (output-line)
+            (values output-line (if (= rashell:*query-output-line-number* 1) :DROP T))))
+    (let ((lines (rashell:run-query arranged-conversation)))
+      (assert= 2 (length lines))
+      (assert-string= "A" (first lines))
+      (assert-string= "B" (second lines))
+      (assert-eql :EXITED (rashell:command-status arranged-conversation))
+      (assert-eql 0 (nth-value 1 (rashell:command-status arranged-conversation))))))
+
 (define-testcase rashell-testsuite()
   "Run tests for the rashell module."
   (test-define-command/baseline)
   (test-define-command/option-to-string)
   (test-arranged-conversation/baseline)
   (test-run-tool/baseline)
-  (test-run-test/baseline))
+  (test-run-test/baseline)
+  (test-run-query/baseline)
+  (test-run-query/object-of-output-line))
 
 ;;;; End of file `rashell.lisp'
