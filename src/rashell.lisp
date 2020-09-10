@@ -526,4 +526,91 @@ The arranged conversation is driven by the following clauses:
                    :argv (list "-c" (prepare-script clauses))
                    :documentation (prepare-documentation clauses))))
 
+
+;;;;
+;;;; Error Condition
+;;;;
+
+(define-condition command-error (error)
+  ((command
+    :type command
+    :initarg :command
+    :reader command-error-command)
+   (status
+    :type symbol
+    :initarg :status
+    :reader command-error-status)
+   (code
+    :type number
+    :initarg :code
+    :reader command-error-code)
+   (accumulated-output
+    :type string
+    :initarg :output
+    :reader command-error-output)
+   (accumulated-error
+    :type string
+    :initarg :error
+    :reader command-error-error))
+  (:report
+   (lambda (condition stream)
+     (format stream "Command failed.
+
+The process executing the command
+
+   ~A
+
+met an error condition." (command-error-command condition))
+     (when (command-error-error condition)
+       (format stream "  This process provided the following diagnostic:
+
+   ~A"
+               (command-error-error condition)))))
+  (:documentation
+   "This condition is signaled when an external process executing a
+command meets an error condition."))
+
+
+
+;;;;
+;;;; Tool Operation
+;;;;
+
+(defun run-tool (command &key trim)
+  "Run COMMAND as a tool.
+Start an external process running COMMAND, without standard input. Return
+the accumulated standard output and standard error as multiple values.
+
+When TRIM is set to T, trailing whitespace is removed from the program standard output."
+  (let ((accumulated-output (make-string-output-stream))
+        (accumulated-error (make-string-output-stream)))
+    (labels
+        ((finalise-accumulated-output (output)
+           (if trim
+               (string-right-trim '(#\Space #\Newline) output)
+               output)))
+      (multiple-value-bind (status code)
+          (progn
+            (run-command command :output accumulated-output :error accumulated-error :input nil)
+            (wait-command command)
+            (command-status command))
+        (if (and (eq status :exited) (eq code 0))
+            (values
+             (finalise-accumulated-output (get-output-stream-string accumulated-output))
+             (get-output-stream-string accumulated-error))
+            (restart-case
+                (error 'command-error
+                       :command command
+                       :status status
+                       :code code
+                       :output (get-output-stream-string accumulated-output)
+                       :error (get-output-stream-string accumulated-error))
+              (ignore-exit-status ()
+                :report "Ignore exit status and proceed as if the command succeeded.
+The current accumulated standard output of the command is used as a return value, and the
+accumulated standard error is discarded."
+                (values
+                 (finalise-accumulated-output (get-output-stream-string accumulated-output))
+                 ""))))))))
+
 ;;;; End of file `rashell.lisp'

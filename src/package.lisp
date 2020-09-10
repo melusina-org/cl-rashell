@@ -25,7 +25,8 @@
    #:wait-command
    #:kill-command
    #:close-command
-   #:arranged-conversation))
+   #:arranged-conversation
+   #:run-tool))
 
 (defpackage #:rashell-user
   (:use #:common-lisp #:rashell))

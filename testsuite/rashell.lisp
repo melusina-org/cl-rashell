@@ -66,10 +66,23 @@
            (assert-eql 0 (nth-value 1 (rashell:command-status arranged-conversation))))
       (rashell:kill-command arranged-conversation :kill))))
 
+(define-testcase test-run-tool/baseline ()
+  (let ((arranged-conversation
+          (rashell:arranged-conversation
+           '((:write-output-line "Arranged output.")
+             (:exit 0)))))
+    (multiple-value-bind (accumulated-output accumulated-error)
+        (rashell:run-tool arranged-conversation :trim t)
+      (assert-string= "Arranged output." accumulated-output)
+      (assert-string= "" accumulated-error)
+      (assert-eql :EXITED (rashell:command-status arranged-conversation))
+      (assert-eql 0 (nth-value 1 (rashell:command-status arranged-conversation))))))
+
 (define-testcase rashell-testsuite()
   "Run tests for the rashell module."
   (test-define-command/baseline)
   (test-define-command/option-to-string)
-  (test-arranged-conversation/baseline))
+  (test-arranged-conversation/baseline)
+  (test-run-tool/baseline))
 
 ;;;; End of file `rashell.lisp'
