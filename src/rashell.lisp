@@ -613,4 +613,56 @@ accumulated standard error is discarded."
                  (finalise-accumulated-output (get-output-stream-string accumulated-output))
                  ""))))))))
 
+
+;;;;
+;;;; Test Operation
+;;;;
+
+(defun run-test (command)
+  "Run COMMAND and return exit status as a generalised boolean.
+
+When the external process running COMMAND exits with a
+return code of 0, the value T is returned, a code 1 is
+associated to NIL and other exit status are interpreted
+as errors. The output and error diangostic of the command
+are returned as second and third value."
+  (let ((command-output (make-string-output-stream))
+        (command-error (make-string-output-stream)))
+    (multiple-value-bind (status code)
+        (progn
+          (run-command command :output command-output :error command-error :input nil)
+          (wait-command command)
+          (command-status command))
+      (cond
+        ((and (eq status :exited) (eq code 0))
+         (values
+          t
+          (get-output-stream-string command-output)
+          (get-output-stream-string command-error)))
+        ((and (eq status :exited) (eq code 1))
+         (values
+          nil
+          (get-output-stream-string command-output)
+          (get-output-stream-string command-error)))
+        (t
+         (restart-case
+             (error 'command-error
+                    :command command
+                    :status status
+                    :code code
+                    :output (get-output-stream-string command-output)
+                    :error (get-output-stream-string command-error))
+           (ignore-exit-status ()
+             :report "Ignore exit status and proceed as if the command succeeded."
+             (values
+              t
+              (get-output-stream-string command-output)
+              (get-output-stream-string command-error)))
+           (sloppy-exit-status ()
+             :report "Ignore special exit status and proceed as if the command failed with exit status 1."
+             (values
+              nil
+              (get-output-stream-string command-output)
+              (get-output-stream-string command-error)))))))))
+
 ;;;; End of file `rashell.lisp'
