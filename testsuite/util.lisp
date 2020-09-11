@@ -18,7 +18,10 @@
   (assert-nil (rashell::string-match "?" ""))
   (assert-t (rashell::string-match "" ""))
   (assert-t (rashell::string-match "*" ""))
+  (assert-t (rashell::string-match "?" "."))
   (assert-t (rashell::string-match "*" "supercalifragilisticexpialidocious"))
+  (assert-t (rashell::string-match "*.c" ".c"))
+  (assert-t (rashell::string-match "*.*" "compiler.c"))
   (assert-t (rashell::string-match "super*cali*" "supercalifragilisticexpialidocious"))
   (assert-t (rashell::string-match "supercal?fragilisticexpialidocious" "supercalifragilisticexpialidocious")))
 
