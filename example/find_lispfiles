@@ -1,4 +1,6 @@
-;;;; testsuite.lisp – Testsuite
+#!/usr/bin/env sbcl --script
+;;;; Hey Emacs, this is a -*- lisp -*- file
+;;;; find_lispfiles -- Find Lisp Files in Current Working Directory
 
 ;;;; Rashell (https://github.com/michipili/cl-rashell)
 ;;;; This file is part of Rashell
@@ -11,12 +13,13 @@
 ;;;; are also available at
 ;;;; https://opensource.org/licenses/MIT
 
-(in-package #:rashell/test)
+(load #p"~/.sbclrc")
 
-(define-testcase run-all-tests()
-  "Run all available tests."
-  (util-testsuite)
-  (rashell-testsuite)
-  (posix-testsuite))
+(ql:quickload "rashell" :silent t)
 
-;;;; End of file `testsuite.lisp'
+(let ((find-lisp-files
+        (rashell:find* '(:and (:has-kind :regular) (:name "*lisp")) #p".")))
+  (rashell:do-query (line find-lisp-files)
+    (write-line line)))
+
+;;;; End of file `find_lispfiles'

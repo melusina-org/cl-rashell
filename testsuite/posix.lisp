@@ -1,4 +1,4 @@
-;;;; testsuite.lisp – Testsuite
+;;;; posix.lisp -- Posix utilities
 
 ;;;; Rashell (https://github.com/michipili/cl-rashell)
 ;;;; This file is part of Rashell
@@ -13,10 +13,18 @@
 
 (in-package #:rashell/test)
 
-(define-testcase run-all-tests()
-  "Run all available tests."
-  (util-testsuite)
-  (rashell-testsuite)
-  (posix-testsuite))
+
+;;;;
+;;;; Rashell POSIX Interface
+;;;;
 
-;;;; End of file `testsuite.lisp'
+(define-testcase test-posix/find-expr ()
+  (assert-equal
+   '("(" "-not" "(" "-name" "*.c" ")" ")" "-and" "(" "-print" ")")
+   (rashell::find-predicate-to-argv '(:and (:not (:name "*.c")) :print))))
+
+(define-testcase posix-testsuite ()
+  "Run tests for the posix module."
+  (test-posix/find-expr))
+
+;;;; End of file `posix.lisp'

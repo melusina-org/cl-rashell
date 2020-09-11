@@ -13,6 +13,7 @@
 
 (defpackage #:rashell
   (:use #:common-lisp)
+  (:import-from :parse-float :parse-float)
   (:export
    #:command
    #:define-command
@@ -32,7 +33,33 @@
    #:do-query
    #:run-filter
    #:do-filter 
-   #:*query-output-line-number*))
+   #:*query-output-line-number*
+
+   ;; POSIX - File Utilities
+   #:find*
+   #:test
+   #:cp
+   #:rm
+   #:mv
+   #:ln
+   #:mkdir
+   #:cat
+
+   ;; POSIX – Sed & Awk
+   #:sed
+   #:awk
+   
+   ;; POSIX – Free Disk Space
+   #:free-disk-space
+   #:free-disk-space-device
+   #:free-disk-space-blocks
+   #:free-disk-space-used
+   #:free-disk-space-free
+   #:free-disk-space-capacity
+   #:free-disk-space-mounted-on
+   #:df
+   #:du
+   ))
 
 (defpackage #:rashell-user
   (:use #:common-lisp #:rashell))

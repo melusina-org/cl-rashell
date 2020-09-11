@@ -20,7 +20,8 @@
   ((:module "src"
     :components ((:file "package")
 		 (:file "util")
-		 (:file "rashell")))))
+                 (:file "rashell")
+                 (:file "posix")))))
 
 (asdf:defsystem #:rashell/test
   :description "Resilient replicant Shell Programming Library for Common Lisp"
@@ -32,6 +33,7 @@
     :components ((:file "package")
 		 (:file "util")
                  (:file "rashell")
+                 (:file "posix")
                  (:file "testsuite")))))
 
 ;;;; End of file `rashell.asd'
