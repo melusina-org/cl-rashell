@@ -117,7 +117,7 @@
              (:exit 0)))))
     (setf (slot-value arranged-conversation 'rashell::object-of-output-line)
           (lambda (output-line)
-            (values output-line (if (= rashell:*query-output-line-number* 1) :DROP T))))
+            (if (= rashell:*query-output-line-number* 1) :DROP output-line)))
     (let ((lines (rashell:run-query arranged-conversation)))
       (assert= 2 (length lines))
       (assert-string= "A" (first lines))

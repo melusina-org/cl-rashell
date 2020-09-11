@@ -740,8 +740,8 @@ are returned as second and third value."
                    (close error-stream)))
             do (handler-case
                    (when (and (open-stream-p output-stream) (is-output-available-p))
-                     (multiple-value-bind (object dropflag) (read-output-line)
-                       (unless (eq :drop dropflag) 
+                     (let ((object (read-output-line)))
+                       (unless (eq :drop object) 
                          (funcall process-one-line object))))
                  (end-of-file (condition)
                    (declare (ignore condition))
