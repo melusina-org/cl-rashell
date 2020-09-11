@@ -30,6 +30,10 @@
    :reference "http://pubs.opengroup.org/onlinepubs/9699919799/utilities/mkdir.html"
    :rest (rashell::ensure-list pathname-list)))
 
+(rashell:define-command tr (translate-from translate-to)
+  nil
+  (:program #P"/usr/bin/tr" :rest (list translate-from translate-to)))
+
 (define-testcase test-define-command/baseline ()
   (let ((cp (cp '(#p"/dev/null") #p"/nonexistant" :directory #p"/" :force t :recursive t)))
     (assert-equal
@@ -121,7 +125,53 @@
       (assert-eql :EXITED (rashell:command-status arranged-conversation))
       (assert-eql 0 (nth-value 1 (rashell:command-status arranged-conversation))))))
 
-(define-testcase rashell-testsuite()
+(define-testcase test-run-filter/string ()
+  (let* ((command (tr "AB" "ab"))
+         (output (rashell:run-filter command "ABRACADABRA")))
+    (assert-type output 'string)
+    (assert-string= "abRaCaDabRa" output)
+    (assert-eql :EXITED (rashell:command-status command))
+    (assert-eql 0 (nth-value 1 (rashell:command-status command)))))
+
+(define-testcase test-run-filter/multiline-string ()
+  (let* ((command (tr "AB" "ab"))
+         (output (rashell:run-filter command "ABRACA
+DABRA")))
+    (assert-type output 'string)
+    (assert-string= "abRaCa
+DabRa" output)
+    (assert-eql :EXITED (rashell:command-status command))
+    (assert-eql 0 (nth-value 1 (rashell:command-status command)))))
+
+(define-testcase test-run-filter/nontrimmed-string ()
+  (let* ((command (tr "AB" "ab"))
+         (output (rashell:run-filter command "ABRACADABRA
+")))
+    (assert-type output 'string)
+    (assert-string= "abRaCaDabRa
+" output)
+    (assert-eql :EXITED (rashell:command-status command))
+    (assert-eql 0 (nth-value 1 (rashell:command-status command)))))
+
+(define-testcase test-run-filter/list ()
+  (let* ((command (tr "AB" "ab"))
+         (output (rashell:run-filter command '("ABRACADABRA"))))
+    (assert-type output 'list)
+    (assert= 1 (length output))
+    (assert-string= "abRaCaDabRa" (first output))
+    (assert-eql :EXITED (rashell:command-status command))
+    (assert-eql 0 (nth-value 1 (rashell:command-status command)))))
+
+(define-testcase test-run-filter/array ()
+  (let* ((command (tr "AB" "ab"))
+         (output (rashell:run-filter command #("ABRACADABRA"))))
+    (assert-type output 'array)
+    (assert= 1 (length output))
+    (assert-string= "abRaCaDabRa" (aref output 0))
+    (assert-eql :EXITED (rashell:command-status command))
+    (assert-eql 0 (nth-value 1 (rashell:command-status command)))))
+
+(define-testcase rashell-testsuite ()
   "Run tests for the rashell module."
   (test-define-command/baseline)
   (test-define-command/option-to-string)
@@ -129,6 +179,11 @@
   (test-run-tool/baseline)
   (test-run-test/baseline)
   (test-run-query/baseline)
-  (test-run-query/object-of-output-line))
+  (test-run-query/object-of-output-line)
+  (test-run-filter/string)
+  (test-run-filter/multiline-string)
+  (test-run-filter/nontrimmed-string)
+  (test-run-filter/list)
+  (test-run-filter/array)) 
 
 ;;;; End of file `rashell.lisp'

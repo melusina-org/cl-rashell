@@ -776,4 +776,117 @@ The returning form is RESULT."
     (do-query (line command (nreverse answer))
       (push line answer))))
 
+
+;;;;
+;;;; Use a command as a filter
+;;;;
+
+(defun do-filter/loop (command input process-one-line prepare-result)
+  (declare (optimize (debug 3)))
+  (run-command command :input input :output :stream :error :stream)
+  (let
+      ((output-stream
+         (command-output command))
+       (error-stream
+         (command-error command))
+       (object-of-output-line
+         (slot-value command 'object-of-output-line))
+       (accumulated-error
+         (make-string-output-stream)))
+    (labels
+        ((is-output-available-p ()
+           (peek-char nil output-stream))
+         (read-output-line ()
+           (if object-of-output-line
+               (funcall object-of-output-line (read-line output-stream))
+               (read-line output-stream)))
+         (read-error ()
+           (loop for error-char = (read-char-no-hang error-stream)
+                 while error-char
+                 do (write-char error-char accumulated-error))))
+      (loop while (or (open-stream-p output-stream) (open-stream-p error-stream))
+            do (handler-case
+                   (when (open-stream-p error-stream)
+                     (read-error))
+                 (end-of-file (condition)
+                   (declare (ignore condition))
+                   (close error-stream)))
+            do (handler-case
+                   (when (and (open-stream-p output-stream) (is-output-available-p))
+                     (funcall process-one-line (read-output-line)))
+                 (end-of-file (condition)
+                   (declare (ignore condition))
+                   (close output-stream))))
+      (wait-command command)
+      (multiple-value-bind (status code) (command-status command)
+        (cond
+          ((and (eq status :exited) (= code 0))
+           (funcall prepare-result))
+          (t
+           (error 'command-error
+                  :command command
+                  :status status
+                  :code code
+                  :output nil
+                  :error (get-output-stream-string accumulated-error))))))))
+
+(defmacro do-filter ((var command input &optional result) &body body)
+  "Run a query process running the given COMMAND and filter INPUT lines.
+
+The VAR is successfully bound to each available line produced by COMMAND,
+after reading from INPUT and BODY is executed for each of these lines.
+
+In the particular case where the COMMAND defines an OBJECT-OF-OUTPUT-LINE,
+the VAR is bound to the return value applied to the current line, instead
+of the actual line.
+
+The returning form is RESULT."
+  `(do-filter/loop ,command ,input (lambda (,var) ,@body) (lambda () ,result)))
+
+(defun run-filter (command input)
+  "Run a query process running the given COMMAND on INPUT.
+
+When INPUT is a stream, a pathname, or a string, the returned value is a string.
+
+When INPUT is a string list the returned value is a string list.
+
+When INPUT is an array, the returned values is an array of strings."
+  (labels
+      ((stream-of-string-list (lines)
+         (let ((buffer (make-string-output-stream)))
+           (loop for line in lines
+                 do (write-line line buffer))
+           (make-string-input-stream
+            (get-output-stream-string buffer))))
+       (stream-of-string-array (lines)
+         (let ((buffer (make-string-output-stream)))
+           (loop for line across lines
+                 do (write-line line buffer))
+           (make-string-input-stream
+            (get-output-stream-string buffer))))
+       (array-of-list (list)
+         (make-array (length list) :initial-contents list)))
+    (etypecase input
+      (stream
+       (with-output-to-string (output-buffer)
+         (do-filter (line command input nil)
+           (write-line line output-buffer))))
+      (pathname
+       (with-open-file (input-stream input)
+         (run-filter command input-stream)))
+      (string
+       (let ((output-string (run-filter command (make-string-input-stream input))))
+         (if (and (< 0 (length input)) (char= #\Newline (char input (1- (length input)))))
+             output-string
+             (string-trim '(#\Newline) output-string))))
+      (array
+       (array-of-list
+        (let ((output-lines nil))
+          (do-filter (line command (stream-of-string-array input) (nreverse output-lines))
+            (push line output-lines)))))
+      (list
+       (let ((output-lines nil))
+         (do-filter (line command (stream-of-string-list input) (nreverse output-lines))
+           (push line output-lines)))))))
+
 ;;;; End of file `rashell.lisp'

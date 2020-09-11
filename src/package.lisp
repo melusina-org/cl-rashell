@@ -30,6 +30,8 @@
    #:run-test
    #:run-query
    #:do-query
+   #:run-filter
+   #:do-filter 
    #:*query-output-line-number*))
 
 (defpackage #:rashell-user
