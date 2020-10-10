@@ -1,0 +1,184 @@
+\input texinfo   @c -*-texinfo-*-
+@c %**start of header
+@setfilename rashell.info
+@settitle Rashell Manual
+@c %**end of header
+
+@c for install-info
+@dircategory Software development
+@direntry
+* rashell:           Common Lisp interface to external programs.
+@end direntry
+
+@copying
+Rashell software and associated documentation is distributed
+under the terms of the MIT license.
+domain:
+
+@quotation
+MIT License
+
+Copyright © 2017–2020 Michaël Le Barbier
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+@end quotation
+
+@end copying
+@titlepage
+
+@title Rashell Manual
+@subtitle draft version
+
+@c The following two commands start the copyright page.
+@page
+@vskip 0pt plus 1filll
+@insertcopying
+
+@end titlepage
+
+@contents
+
+@ifnottex
+
+@include include/ifnottex.texinfo
+
+@node Top
+@comment  node-name,  next,  previous,  up
+@top Rashell
+
+@insertcopying
+
+@menu
+* Introduction::
+* Making Commands::
+* Running Commands::
+* Defining Commands::
+* Predefined Commands::
+@end menu
+
+@end ifnottex
+
+@node Introduction, Making Commands, Top, Top
+@chapter Introduction
+
+The @b{Rashell} package defines primitives which combine ease of use
+with the ability to write maintainable and resilient programs
+leveraging the full power of Unix. These primitives implements common
+patterns to interact with Unix utilities as subprocesses. These
+patterns either yield a string or a sequence of lines, they will also
+adequately report error conditions on subprocesses.
+
+The @code{command} class captures all the characterestics of a Unix
+command: the path to an external program, the program arguments,
+execution directory, environment, I/O redirections and optionally an
+external process running that command.  While @code{command}s can be
+created with @code{make-instance} the macro @code{define-command}
+makes it easy to define functions creating commands, translating Lisp
+function arguments into a Unix-style vector.
+
+Once created, a command can be run according to several treament
+patterns, either as an utility (commands like @code{cp}, @code{rm},
+compilers), as a test (commands like @code{test}), as a query
+(commands like @code{find}) or a filter (commands like @code{sed} and
+@code{awk}).
+
+The @b{Rashell} package defines function to create commands for some
+of the most commonly used Unix utilities: @code{awk}, @code{cat},
+@code{cp}, @code{df}, @code{du}, …
+
+Currently, the @b{Rashell} package only targets SBCL.
+
+
+@node Making Commands, Running Commands, Introduction, Top
+@chapter Making and Examining Commands
+
+The @code{command} class captures all the characterestics of a Unix
+command.
+
+@include include/class-rashell-command.texinfo
+@include include/fun-rashell-close-command.texinfo
+@include include/fun-rashell-command-error.texinfo
+@include include/fun-rashell-command-input.texinfo
+@include include/fun-rashell-command-output.texinfo
+@include include/fun-rashell-command-p.texinfo
+@include include/fun-rashell-command-status.texinfo
+
+@node Running Commands, Making Commands, Introduction, Top
+@chapter Running Commands
+
+@include include/fun-rashell-run-tool.texinfo
+@include include/fun-rashell-run-test.texinfo
+@include include/fun-rashell-run-query.texinfo
+@include include/macro-rashell-do-query.texinfo
+@include include/var-rashell-star-query-output-line-number-star.texinfo
+@include include/fun-rashell-run-filter.texinfo
+@include include/macro-rashell-do-filter.texinfo
+
+The functions @code{run-command}, @code{wait-command} and
+@code{kill-command} can be used to finely control interaction with an
+external program running a command.
+
+@include include/fun-rashell-run-command.texinfo
+@include include/fun-rashell-wait-command.texinfo
+@include include/fun-rashell-kill-command.texinfo
+@include include/condition-rashell-command-error.texinfo
+
+
+
+@node Defining Commands, Predefined Commands, Running Commands, Top
+@chapter Defining Commands
+
+@example
+RASHELL> (describe #'cp)
+#<FUNCTION CP>
+  [compiled function]
+
+
+Lambda-list: (PATHNAME-LIST DESTINATION &KEY DIRECTORY ENVIRONMENT
+              FOLLOW FORCE RECURSIVE)
+Derived type: (FUNCTION
+               (T T &KEY (:DIRECTORY T) (:ENVIRONMENT T) (:FOLLOW T)
+                (:FORCE T) (:RECURSIVE T))
+               *)
+Documentation:
+  Run cp(1) on PATHNAME-LIST and DESTINATION.
+Source file: /Users/michael/Lisp/cl-rashell/src/posix.lisp
+@end example
+
+@include include/macro-rashell-define-command.texinfo
+
+
+@chapter Predefined Commands
+@node Predefined Commands, , Defining Commands, Top
+
+@include include/fun-rashell-arranged-conversation.texinfo
+@include include/fun-rashell-awk.texinfo
+@include include/fun-rashell-cat.texinfo
+@include include/fun-rashell-cp.texinfo
+@include include/fun-rashell-df.texinfo
+@include include/fun-rashell-du.texinfo
+@include include/fun-rashell-find-star.texinfo
+@include include/fun-rashell-ln.texinfo
+@include include/fun-rashell-mkdir.texinfo
+@include include/fun-rashell-mv.texinfo
+@include include/fun-rashell-rm.texinfo
+@include include/fun-rashell-sed.texinfo
+@include include/fun-rashell-test.texinfo
+
+@bye

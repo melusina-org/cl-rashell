@@ -1,0 +1,8 @@
+#!/bin/sh
+
+for patch in patch/*.sed; do
+    include="${patch}"
+    include="include/${include#patch/}"
+    include="${include%.sed}.texinfo"
+    sed -i '' -f "${patch}" "${include}"
+done

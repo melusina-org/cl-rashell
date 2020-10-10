@@ -1,0 +1,2 @@
+s/"VARIABLE=VALUE"/@code{"VARIABLE=VALUE"}/
+s/(VARIABLE [.] VALUE)/@code{( VARIABLE . VALUE)}/
