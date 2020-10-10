@@ -152,11 +152,11 @@ The OPTIONS parameter is a list of option specifications. An option specificatio
 starting with a symbol, the OPTION-NAME, which is used to label the optional parameter of
 the function NAME. The allowed forms for option specifications are:
 
-  '(OPTION-NAME :flag FLAG-STRING)
+  (OPTION-NAME :flag FLAG-STRING)
     The parameter OPTION-NAME is interpreted as a generalised boolean.  When it is set, the
     FLAG-STRING is added to the command-lin of the external program being run.
 
-  '(OPTION-NAME :option OPTION-STRING [:to-string CONVERT] [:multiple MULTIPLE-FLAG])
+  (OPTION-NAME :option OPTION-STRING [:to-string CONVERT] [:multiple MULTIPLE-FLAG])
     The parameter OPTION-NAME is interpreted as an arbitrary value is a string, or is converted to a
     string either by applying the function passed as the :to-string property, 
     or by using `write-to-string' if none of the preceeding rules apply.
@@ -605,11 +605,11 @@ command meets an error condition."))
 
 
 ;;;;
-;;;; Tool Operation
+;;;; Utility Operation
 ;;;;
 
-(defun run-tool (command &key trim)
-  "Run COMMAND as a tool.
+(defun run-utility (command &key trim)
+  "Run COMMAND as a utility.
 Start an external process running COMMAND, without standard input. Return
 the accumulated standard output and standard error as multiple values.
 
@@ -656,8 +656,8 @@ accumulated standard error is discarded."
 When the external process running COMMAND exits with a
 return code of 0, the value T is returned, a code 1 is
 associated to NIL and other exit status are interpreted
-as errors. The output and error diangostic of the command
-are returned as second and third value."
+as errors. The accumulated standard output and standard error
+of the command are returned as second and third value."
   (let ((command-output (make-string-output-stream))
         (command-error (make-string-output-stream)))
     (multiple-value-bind (status code)

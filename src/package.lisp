@@ -27,7 +27,7 @@
    #:kill-command
    #:close-command
    #:arranged-conversation
-   #:run-tool
+   #:run-utility
    #:run-test
    #:run-query
    #:do-query

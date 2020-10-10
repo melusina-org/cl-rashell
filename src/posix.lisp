@@ -136,8 +136,8 @@ The options are
 
  DIRECTORY
     A pathname to a working doirectory to use when running the command.
-
-References: http://pubs.opengroup.org/onlinepubs/9699919799/utilities/find.html"
+"
+  ;; References: http://pubs.opengroup.org/onlinepubs/9699919799/utilities/find.html
   (make-instance 'command
                  :program #p"/usr/bin/find"
                  :directory directory

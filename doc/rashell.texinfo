@@ -122,7 +122,10 @@ command.
 @node Running Commands, Making Commands, Introduction, Top
 @chapter Running Commands
 
-@include include/fun-rashell-run-tool.texinfo
+Once created a command can be run according to one of the standard
+interaction patterns: as a utility, a test, a query, a filter.
+
+@include include/fun-rashell-run-utility.texinfo
 @include include/fun-rashell-run-test.texinfo
 @include include/fun-rashell-run-query.texinfo
 @include include/macro-rashell-do-query.texinfo
@@ -143,23 +146,6 @@ external program running a command.
 
 @node Defining Commands, Predefined Commands, Running Commands, Top
 @chapter Defining Commands
-
-@example
-RASHELL> (describe #'cp)
-#<FUNCTION CP>
-  [compiled function]
-
-
-Lambda-list: (PATHNAME-LIST DESTINATION &KEY DIRECTORY ENVIRONMENT
-              FOLLOW FORCE RECURSIVE)
-Derived type: (FUNCTION
-               (T T &KEY (:DIRECTORY T) (:ENVIRONMENT T) (:FOLLOW T)
-                (:FORCE T) (:RECURSIVE T))
-               *)
-Documentation:
-  Run cp(1) on PATHNAME-LIST and DESTINATION.
-Source file: /Users/michael/Lisp/cl-rashell/src/posix.lisp
-@end example
 
 @include include/macro-rashell-define-command.texinfo
 
