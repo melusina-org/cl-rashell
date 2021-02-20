@@ -14,7 +14,10 @@
 # https://opensource.org/licenses/MIT
 
 : ${TOPLEVELDIR:=$(git rev-parse --show-toplevel)}
+: ${subrdir:=${TOPLEVELDIR}/subr}
 : ${makedocdir:=${TOPLEVELDIR}/obj/makedoc}
+
+. "${subrdir}/stdlib.sh"
 
 makedoc_sbcl()
 {
@@ -28,7 +31,7 @@ makedoc_runpatches()
 	include="obj/makedoc/include/${include##*/patch/}"
 	include="${include%.sed}.texinfo"
 	if [ -f "${patch}" ]; then
-	    sed -i '' -f "${patch}" "${include}"
+	    sed_inplace -f "${patch}" "${include}"
 	fi
     done
 }
