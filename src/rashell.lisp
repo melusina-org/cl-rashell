@@ -310,18 +310,26 @@ the process changes. The function takes the command as an argument.")
                                    output if-output-exists
                                    error if-error-exists
                                    status-hook)
-    (with-slots (program argv environment process) command
+    (with-slots (program argv directory environment process) command
       (when process
         (error "The COMMAND has already been started."))
       (setf process
             (sb-ext:run-program
              program argv
+	     :directory (cond
+			  ((null directory)
+			   nil)
+			  ((pathnamep directory)
+			   (namestring directory))
+			  (t
+			   directory))
              :environment environment
              :input input :if-input-does-not-exist if-input-does-not-exist
              :output output :if-output-exists if-output-exists
              :error error :if-error-exists if-error-exists
              :wait nil
-             :status-hook status-hook))
+             :status-hook status-hook
+	     ))
       (values command))))
 
 (defun command-p (object)
