@@ -1,0 +1,81 @@
+#!/bin/sh
+
+### makedoc -- Make documentation
+
+# Rashell (https://github.com/michipili/cl-rashell)
+# This file is part of Rashell
+#
+# Copyright © 2017–2021 Michaël Le Barbier
+#
+# This file must be used under the terms of the MIT license.
+# This source file is licensed as described in the file LICENSE, which
+# you should have received as part of this distribution. The terms
+# are also available at
+# https://opensource.org/licenses/MIT
+
+: ${TOPLEVELDIR:=$(git rev-parse --show-toplevel)}
+: ${makedocdir:=${TOPLEVELDIR}/obj/makedoc}
+
+makedoc_sbcl()
+{
+    sbcl --noinform --disable-debugger "$@"
+}
+
+makedoc_runpatches()
+{
+    for patch in "${TOPLEVELDIR}"/doc/patch/*.sed; do
+	include="${patch}"
+	include="obj/makedoc/include/${include##*/patch/}"
+	include="${include%.sed}.texinfo"
+	if [ -f "${patch}" ]; then
+	    sed -i '' -f "${patch}" "${include}"
+	fi
+    done
+}
+
+makedoc_extract()
+{
+    makedoc_sbcl \
+	--eval '
+(unless (ql:where-is-system :rashell)
+  (push #p"./" ql:*local-project-directories*))'\
+	--eval '(ql:quickload :rashell)'\
+	--eval '(with-compilation-unit () (load "libexec/lisp/docstrings.lisp"))' \
+	--eval '(sb-texinfo:generate-includes "obj/makedoc/include/" (list :rashell) :base-package :rashell)' \
+	--eval '(quit)'
+}
+
+makedoc_info()
+(
+    cd "${TOPLEVELDIR}/obj/makedoc"
+    makeinfo "${TOPLEVELDIR}/doc/rashell.texinfo"
+)
+
+makedoc_pdf()
+(
+    cd "${TOPLEVELDIR}/obj/makedoc"
+    texi2pdf "${TOPLEVELDIR}/doc/rashell.texinfo"
+)
+
+makedoc_html()
+(
+    cd "${TOPLEVELDIR}/obj/makedoc"
+    makeinfo --html --no-split "${TOPLEVELDIR}/doc/rashell.texinfo"
+)
+
+makedoc_main()
+{
+    if [ ! -f "${TOPLEVELDIR}/doc/rashell.texinfo" ]; then
+	1>&2 printf 'Info: makedoc: There is no documentation master file.\n'
+    fi
+    set -e
+    makedoc_extract
+    makedoc_runpatches
+    makedoc_info
+    makedoc_html
+    makedoc_pdf
+}
+
+makedoc_main "$@"
+
+### End of file `makedoc'

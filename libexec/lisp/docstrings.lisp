@@ -452,7 +452,7 @@ with #\@. Optionally downcase the result."
 
 ;;; line markups
 
-(defvar *not-symbols* '("ANSI" "CLHS"))
+(defvar *not-symbols* '("ANSI" "CLHS" "UNIX"))
 
 (defun locate-symbols (line)
   "Return a list of index pairs of symbol-like parts of LINE."
@@ -733,7 +733,7 @@ followed another tabulation label or a tabulation body."
             ;; sbcl.texinfo defines macros that expand @&key and friends to &key.
             (mapcar (lambda (name)
                       (if (member name lambda-list-keywords)
-                          (format nil "@~A" name)
+                          (format nil "@and~A" (remove #\- (subseq (string name) 1)))
                           name))
                     (lambda-list doc)))))
 

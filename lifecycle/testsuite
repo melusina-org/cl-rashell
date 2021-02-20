@@ -1,5 +1,0 @@
-#!/bin/sh
-
-sbcl --noinform --disable-debugger\
-     --eval '(ql:quickload :rashell/test :silent t)'\
-     --eval '(if (rashell/test:run-all-tests)(uiop:quit 0)(uiop:quit 1))'
