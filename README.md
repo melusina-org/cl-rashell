@@ -25,9 +25,9 @@ compatible with the SBCL implementation of Common Lisp.
 The **Rashell** package comes with documentation in [PDF][doc-pdf],
 [HTML][doc-html] and [INFO][doc-info] format.
 
-  [doc-html]: https://michipili.github.io/assets/cl-rashell/rashell.html
-  [doc-pdf]: https://michipili.github.io/assets/cl-rashell/rashell.pdf
-  [doc-info]: https://michipili.github.io/assets/cl-rashell/rashell.info
+  [doc-html]: https://foretspaisibles.github.io/assets/cl-rashell/rashell.html
+  [doc-pdf]: https://foretspaisibles.github.io/assets/cl-rashell/rashell.pdf
+  [doc-info]: https://foretspaisibles.github.io/assets/cl-rashell/rashell.info
 
 
 ## Future Plans
