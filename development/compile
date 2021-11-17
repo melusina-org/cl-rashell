@@ -15,6 +15,11 @@
 
 : ${TOPLEVELDIR:=$(git rev-parse --show-toplevel)}
 
+compile_cleanup()
+{
+    find "${TOPLEVELDIR}" -type f -name '*.fasl' -delete
+}
+
 compile_sbcl()
 {
     sbcl --noinform --disable-debugger "$@"
@@ -22,6 +27,7 @@ compile_sbcl()
 
 compile_main()
 {
+    compile_cleanup
     compile_sbcl --eval '
 (unless (ql:where-is-system "rashell/test")
  (push #p"./" ql:*local-project-directories*)

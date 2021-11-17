@@ -14,6 +14,7 @@
 (defpackage #:rashell
   (:use #:common-lisp)
   (:import-from :parse-float :parse-float)
+  (:import-from :alexandria :make-keyword :with-unique-names)
   (:export
    #:command
    #:define-command
@@ -28,26 +29,43 @@
    #:close-command
    #:arranged-conversation
    #:run-utility
+   #:define-utility
    #:run-test
+   #:define-test
    #:run-query
    #:do-query
+   #:define-query
    #:run-filter
    #:do-filter 
+   #:define-filter
    #:*query-output-line-number*
 
    ;; POSIX - File Utilities
+   #:command-find
    #:find*
+   #:do-find
    #:test
    #:cp
+   #:command-cp
    #:rm
+   #:command-rm
    #:mv
+   #:command-mv
    #:ln
+   #:command-ln
    #:mkdir
+   #:command-mkdir
    #:cat
+   #:command-cat
 
    ;; POSIX – Sed & Awk
    #:sed
+   #:command-sed
+   #:do-sed
+   
    #:awk
+   #:command-awk
+   #:do-awk
    
    ;; POSIX – Free Disk Space
    #:free-disk-space
@@ -58,7 +76,9 @@
    #:free-disk-space-capacity
    #:free-disk-space-mounted-on
    #:df
+   #:command-df
    #:du
+   #:command-du
    ))
 
 (defpackage #:rashell-user

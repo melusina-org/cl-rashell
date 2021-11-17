@@ -1,6 +1,6 @@
 #!/bin/sh
 
-### unit_test -- Run unit tests
+### testsuite -- Run unit tests
 
 # Rashell (https://github.com/michipili/cl-rashell)
 # This file is part of Rashell
@@ -31,4 +31,4 @@ test_main()
 
 test_main "$@"
 
-### End of file `unit_test'
+### End of file `testsuite'

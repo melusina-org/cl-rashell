@@ -126,7 +126,7 @@ Valid FILE-KIND paramters are
              (push operator answer))))))))
 
 
-(defun find* (predicate-expr pathname &key directory environment follow)
+(defun command-find (predicate-expr pathname &key directory environment follow)
   "Prepare a find(1) command on PATHNAME with the given PREDICATE-EXPR.
 
 The options are
@@ -146,6 +146,21 @@ The options are
                         (when follow (list "-L"))
                         (mapcar #'define-command/to-string (ensure-list pathname))
                         (find-predicate-to-argv predicate-expr))))
+
+(defun find* (predicate-expr pathname &key directory environment follow)
+  (run-query (command-find predicate-expr pathname
+			   :directory directory
+			   :environment environment
+			   :follow follow)))
+
+(defmacro do-find ((var (predicate-expr pathname &key directory environment follow) result) &body body)
+  `(do-query (,var (command-find ,predicate-expr ,pathname
+				 :directory ,directory
+				 :environment ,environment
+				 :follow ,follow)
+		   ,result)
+     ,@body))
+
 
 (defun test (predicate-expr pathname &key follow directory environment)
   "Test the meta-data of file PATHNAME against PREDICATE-EXPRESSION.
@@ -220,7 +235,7 @@ If the file does not exist, the test evaluates to NIL."
               (loop for subform in (rest predicate-form) never (not (eval-predicate subform)))))))
       (when stat (eval-predicate predicate-expr)))))
 
-(define-command cp (pathname-list destination)
+(define-utility cp (pathname-list destination)
   ((follow :flag "-H")
    (force :flag "-f")
    (recursive :flag "-R"))
@@ -229,7 +244,7 @@ If the file does not exist, the test evaluates to NIL."
    :reference "http://pubs.opengroup.org/onlinepubs/9699919799/utilities/cp.html"
    :rest (append (ensure-list pathname-list) (list destination))))
 
-(define-command rm (pathname-list)
+(define-utility rm (pathname-list)
   ((force :flag "-f")
    (recursive :flag "-R"))
   (:program #p"/bin/rm"
@@ -237,14 +252,14 @@ If the file does not exist, the test evaluates to NIL."
    :reference "http://pubs.opengroup.org/onlinepubs/9699919799/utilities/rm.html"
    :rest (ensure-list pathname-list)))
 
-(define-command mv (pathname-list destination)
+(define-utility mv (pathname-list destination)
   ((force :flag "-f"))
   (:program "#p/bin/mv"
    :documentation "Run mv(1) on PATHNAME-LIST and DESINATION."
    :reference "http://pubs.opengroup.org/onlinepubs/9699919799/utilities/mv.html"
    :rest (append (ensure-list pathname-list) (list destination))))
 
-(define-command ln (pathname destination)
+(define-utility ln (pathname destination)
   ((force :flag "-f")
    (symbolic :flag "-s"))
   (:program #p"/bin/ln"
@@ -252,7 +267,7 @@ If the file does not exist, the test evaluates to NIL."
    :reference "http://pubs.opengroup.org/onlinepubs/9699919799/utilities/ln.html"
    :rest (list pathname destination)))
 
-(define-command mkdir (pathname-list)
+(define-utility mkdir (pathname-list)
   ((mode :option "-m" :to-string (lambda (mode) (format nil "~3,'0O" mode)))
    (create-intermediate :flag "-p"))
   (:program #p"/bin/mkdir"
@@ -260,21 +275,21 @@ If the file does not exist, the test evaluates to NIL."
    :reference "http://pubs.opengroup.org/onlinepubs/9699919799/utilities/mkdir.html"
    :rest (ensure-list pathname-list)))
 
-(define-command cat (pathname-list)
+(define-utility cat (pathname-list)
   nil
   (:program #p"/bin/cat"
    :documentation "Run cat(1) on PATHNAME-LIST."
    :reference "http://pubs.opengroup.org/onlinepubs/9699919799/utilities/cat.html"
    :rest (ensure-list pathname-list)))
 
-(define-command sed (sedscript)
+(define-filter sed (sedscript)
   ((echo :flag "-n"))
   (:program #p"/usr/bin/sed"
    :documentation "Run sed(1) with the given SEDSCRIPT on INPUT."
    :reference "http://pubs.opengroup.org/onlinepubs/9699919799/utilities/sed.html"
    :rest (list "-e" sedscript)))
 
-(define-command awk (awkscript)
+(define-filter awk (awkscript)
   ((sepstring :option "-F")
    (assignment :option "-v" :multiple t :to-string (lambda (x) (concatenate 'string (first x) "=" (second x)))))
   (:program #p"/usr/bin/awk"
@@ -307,7 +322,7 @@ If the file does not exist, the test evaluates to NIL."
      :capacity (parse-float (aref registers 4))
      :mounted-on (aref registers 5))))
 
-(define-command df (path-or-paths)
+(define-query df (path-or-paths)
   nil
   (:program #p"/bin/df"
    :reference "http://pubs.opengroup.org/onlinepubs/9699919799/utilities/df.html"
@@ -332,7 +347,7 @@ free disk space is computed with `df -k -P` as described in df(1)."
     (declare (ignore ignored-text))
     (list (aref registers 1) (parse-integer (aref registers 0)))))
 
-(define-command du (pathname)
+(define-query du (pathname)
   nil
   (:program #p"/usr/bin/du"
    :documentation "Query the consumed disk space for the file hierarchies

@@ -37,8 +37,7 @@
    #+os-macosx
    '((:stop . 17)
      (:terminal-stop . 18)
-     (:continue . 19))
-   )
+     (:continue . 19)))
   "The table mapping symbolic signal names to numeric signal names.")
 
 ;;;;
@@ -140,6 +139,8 @@ conversion is only used when operation the command as a query.")
       (t
        (error "~S: Cannot prepare argument vector according to SPEC." spec)))))
 
+(defun define-command/defun-argv (argv options)
+  (concatenate 'list argv '(&key) '(directory environment) (mapcar #'first options)))
 
 (defmacro define-command (name argv options spec)
   "Define a function NAME that can run a command according to SPEC.
@@ -199,7 +200,7 @@ TODO
         (object-of-output-line
           (getf spec :object-of-output-line))
         (defun-argv
-          (concatenate 'list argv '(&key) '(directory environment) (mapcar #'first options)))
+	  (define-command/defun-argv argv options))
         (program
           (getf spec :program))
         (prepare-argv-body
@@ -653,6 +654,30 @@ accumulated standard error is discarded."
                  (finalise-accumulated-output (get-output-stream-string accumulated-output))
                  ""))))))))
 
+(defmacro define-utility (name argv options spec &key trim)
+  "Define a function NAME that runs utility according to SPEC.
+An intermediary function creating the corresponding command (without
+running it) is also defined. The name of this intermediary function
+is construced by prefixing COMMAND- to the provided NAME."
+  (let* ((package
+	   (symbol-package name))
+	 (command-name
+	   (intern (concatenate 'string "COMMAND-" (symbol-name name)) package))
+	 (utility-name
+	   name)
+	 (defun-argv
+	   (define-command/defun-argv argv options))
+	 (invocation-argv
+	   (loop for argv in (define-command/defun-argv argv options)
+		 for seen-keys = nil then (or seen-keys (eq argv '&key))
+		 unless (eq argv '&key)
+		 append (if seen-keys
+			    (list (make-keyword argv) argv)
+			    (list argv)))))
+    `(progn
+       (define-command ,command-name ,argv ,options ,spec)
+       (defun ,utility-name ,defun-argv
+	 (run-utility (,command-name ,@invocation-argv) :trim ,trim)))))
 
 ;;;;
 ;;;; Test Operation
@@ -705,6 +730,31 @@ of the command are returned as second and third value."
               (get-output-stream-string command-output)
               (get-output-stream-string command-error)))))))))
 
+(defmacro define-test (name argv options spec)
+  "Define a function NAME that runs test according to SPEC.
+An intermediary function creating the corresponding command (without
+running it) is also defined. The name of this intermediary function
+is construced by prefixing COMMAND- to the provided NAME."
+  (let* ((package
+	   (symbol-package name))
+	 (command-name
+	   (intern (concatenate 'string "COMMAND-" (symbol-name name)) package))
+	 (utility-name
+	   name)
+	 (defun-argv
+	   (define-command/defun-argv argv options))
+	 (invocation-argv
+	   (loop for argv in (define-command/defun-argv argv options)
+		 for seen-keys = nil then (or seen-keys (eq argv '&key))
+		 unless (eq argv '&key)
+		 append (if seen-keys
+			    (list (make-keyword argv) argv)
+			    (list argv)))))
+    `(progn
+       (define-command ,command-name ,argv ,options ,spec)
+       (defun ,utility-name ,defun-argv
+	 (run-test (,command-name ,@invocation-argv))))))
+
 
 ;;;;
 ;;;; Use a command as a query
@@ -714,7 +764,6 @@ of the command are returned as second and third value."
   "This variable is bound in the main loop of DO-QUERY and exposes the output line number.")
 
 (defun do-query/loop (command process-one-line prepare-result)
-  (declare (optimize (debug 3)))
   (run-command command :input nil :output :stream :error :stream)
   (let
       ((output-stream
@@ -784,13 +833,46 @@ The returning form is RESULT."
     (do-query (line command (nreverse answer))
       (push line answer))))
 
+(defmacro define-query (name argv options spec)
+  "Define a function NAME that runs query according to SPEC.
+An intermediary function creating the corresponding command (without
+running it) is also defined. The name of this intermediary function
+is construced by prefixing COMMAND- to the provided NAME."
+  (let* ((package
+	   (symbol-package name))
+	 (command-name
+	   (intern (concatenate 'string "COMMAND-" (symbol-name name)) package))
+	 (do-name
+	   (intern (concatenate 'string "DO-" (symbol-name name)) package))
+	 (utility-name
+	   name)
+	 (defun-argv
+	   (define-command/defun-argv argv options))
+	 (invocation-argv
+	   (loop for argv in (define-command/defun-argv argv options)
+		 for seen-keys = (eq argv '&key) then (or seen-keys (eq argv '&key))
+		 unless (eq argv '&key)
+		 append (if seen-keys
+			    (list (make-keyword argv) argv)
+			    (list argv)))))
+    (with-unique-names (command)
+      `(progn
+	 (define-command ,command-name ,argv ,options ,spec)
+	 (defun ,utility-name ,defun-argv
+	   (let ((,command
+		   (,command-name ,@invocation-argv)))
+	     (values (run-query ,command) ,command)))
+	 (defmacro ,do-name ((var ,defun-argv &optional result) &body body)
+	   (list* 'do-filter
+		  (list var ,(list* 'list (list 'quote command-name) invocation-argv) result)
+		  body))))))
+
 
 ;;;;
 ;;;; Use a command as a filter
 ;;;;
 
 (defun do-filter/loop (command input process-one-line prepare-result)
-  (declare (optimize (debug 3)))
   (run-command command :input input :output :stream :error :stream)
   (let
       ((output-stream
@@ -842,7 +924,7 @@ The returning form is RESULT."
   "Run a query process running the given COMMAND and filter INPUT lines.
 
 The VAR is successfully bound to each available line produced by COMMAND,
-after reading from INPUT and BODY is executed for each of these lines.
+after reading from INPUT stream and BODY is executed for each of these lines.
 
 In the particular case where the COMMAND defines an OBJECT-OF-OUTPUT-LINE,
 the VAR is bound to the return value applied to the current line, instead
@@ -896,5 +978,43 @@ When INPUT is an array, the returned values is an array of strings."
        (let ((output-lines nil))
          (do-filter (line command (stream-of-string-list input) (nreverse output-lines))
            (push line output-lines)))))))
+
+(defmacro define-filter (name argv options spec)
+  "Define a function NAME that runs filter according to SPEC.
+
+An intermediary function creating the corresponding command (without
+running it) is also defined. The name of this intermediary function
+is construced by prefixing COMMAND- to the provided NAME."
+  (let* ((package
+	   (symbol-package name))
+	 (command-name
+	   (intern (concatenate 'string "COMMAND-" (symbol-name name)) package))
+	 (utility-name
+	   name)
+	 (do-name
+	     (intern (concatenate 'string "DO-" (symbol-name name)) package))
+	 (defun-argv
+	   (cons 'input (define-command/defun-argv argv options)))
+	 (do-argv
+	   (define-command/defun-argv argv options))
+	 (invocation-argv
+	   (loop for argv in (define-command/defun-argv argv options)
+		 for seen-keys = nil then (or seen-keys (eq argv '&key))
+		 unless (eq argv '&key)
+		 append (if seen-keys
+			    (list (make-keyword argv) argv)
+			    (list argv)))))
+    (with-unique-names (command)
+      `(progn
+	 (define-command ,command-name ,argv ,options ,spec)
+	 (defun ,utility-name ,defun-argv
+	   (let ((,command
+		   (,command-name ,@invocation-argv)))
+	     (values (run-filter ,command input) ,command)))
+	 (defmacro ,do-name ((var ,do-argv input &optional result) &body body)
+	   (list* 'do-filter
+		  (list var ,(list* 'list (list 'quote command-name) invocation-argv)
+			input result)
+		  body))))))
 
 ;;;; End of file `rashell.lisp'

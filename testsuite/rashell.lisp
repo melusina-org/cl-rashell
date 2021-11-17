@@ -34,14 +34,24 @@
   nil
   (:program #P"/usr/bin/tr" :rest (list translate-from translate-to)))
 
+(rashell:define-filter filter (translate-from translate-to)
+  nil
+  (:program #P"/usr/bin/tr" :rest (list translate-from translate-to)))
+
+(rashell:define-query query ()
+  nil
+  (:program #p"/usr/bin/printf" :rest '("%s\\n" "abracadabra" "ABRACADABRA")))
+
 (define-testcase test-define-command/baseline ()
-  (let ((cp (cp '(#p"/dev/null") #p"/nonexistant" :directory #p"/" :force t :recursive t)))
+  (let ((cp
+	  (cp '(#p"/dev/null") #p"/nonexistant" :directory #p"/" :force t :recursive t)))
     (assert-equal
      (slot-value cp 'rashell::argv)
      '("-R" "-f" "/dev/null" "/nonexistant"))))
 
 (define-testcase test-define-command/option-to-string ()
-  (let ((mkdir (mkdir #p"/nonexistant" :mode #O755)))
+  (let ((mkdir
+	  (mkdir #p"/nonexistant" :mode #O755)))
     (assert-equal
      (slot-value mkdir 'rashell::argv)
      '("-m" "755" "/nonexistant"))))
@@ -66,7 +76,7 @@
            (assert-string= "WELCOME email@invalid.org"
                            (read-line (rashell:command-output arranged-conversation)))
            (rashell:wait-command arranged-conversation)
-           (assert-eql :EXITED (rashell:command-status arranged-conversation))
+           (assert-eql :exited (rashell:command-status arranged-conversation))
            (assert-eql 0 (nth-value 1 (rashell:command-status arranged-conversation))))
       (rashell:kill-command arranged-conversation :kill))))
 
@@ -79,7 +89,7 @@
         (rashell:run-utility arranged-conversation :trim t)
       (assert-string= "Arranged output." accumulated-output)
       (assert-string= "" accumulated-error)
-      (assert-eql :EXITED (rashell:command-status arranged-conversation))
+      (assert-eql :exited (rashell:command-status arranged-conversation))
       (assert-eql 0 (nth-value 1 (rashell:command-status arranged-conversation))))))
 
 (define-testcase test-run-test/baseline ()
@@ -92,7 +102,7 @@
       (assert-t test-result)
       (assert-string= "Arranged output." (string-trim '(#\Newline) accumulated-output))
       (assert-string= "" accumulated-error)
-      (assert-eql :EXITED (rashell:command-status arranged-conversation))
+      (assert-eql :exited (rashell:command-status arranged-conversation))
       (assert-eql 0 (nth-value 1 (rashell:command-status arranged-conversation))))))
 
 (define-testcase test-run-query/baseline ()
@@ -105,7 +115,7 @@
       (assert= 2 (length lines))
       (assert-string= "A" (first lines))
       (assert-string= "B" (second lines))
-      (assert-eql :EXITED (rashell:command-status arranged-conversation))
+      (assert-eql :exited (rashell:command-status arranged-conversation))
       (assert-eql 0 (nth-value 1 (rashell:command-status arranged-conversation))))))
 
 (define-testcase test-run-query/object-of-output-line ()
@@ -122,7 +132,7 @@
       (assert= 2 (length lines))
       (assert-string= "A" (first lines))
       (assert-string= "B" (second lines))
-      (assert-eql :EXITED (rashell:command-status arranged-conversation))
+      (assert-eql :exited (rashell:command-status arranged-conversation))
       (assert-eql 0 (nth-value 1 (rashell:command-status arranged-conversation))))))
 
 (define-testcase test-run-filter/string ()
@@ -130,7 +140,7 @@
          (output (rashell:run-filter command "ABRACADABRA")))
     (assert-type output 'string)
     (assert-string= "abRaCaDabRa" output)
-    (assert-eql :EXITED (rashell:command-status command))
+    (assert-eql :exited (rashell:command-status command))
     (assert-eql 0 (nth-value 1 (rashell:command-status command)))))
 
 (define-testcase test-run-filter/multiline-string ()
@@ -140,36 +150,90 @@ DABRA")))
     (assert-type output 'string)
     (assert-string= "abRaCa
 DabRa" output)
-    (assert-eql :EXITED (rashell:command-status command))
+    (assert-eql :exited (rashell:command-status command))
     (assert-eql 0 (nth-value 1 (rashell:command-status command)))))
 
 (define-testcase test-run-filter/nontrimmed-string ()
-  (let* ((command (tr "AB" "ab"))
-         (output (rashell:run-filter command "ABRACADABRA
+  (let* ((command
+	   (tr "AB" "ab"))
+         (output
+	   (rashell:run-filter command "ABRACADABRA
 ")))
     (assert-type output 'string)
     (assert-string= "abRaCaDabRa
 " output)
-    (assert-eql :EXITED (rashell:command-status command))
+    (assert-eql :exited (rashell:command-status command))
     (assert-eql 0 (nth-value 1 (rashell:command-status command)))))
 
 (define-testcase test-run-filter/list ()
-  (let* ((command (tr "AB" "ab"))
-         (output (rashell:run-filter command '("ABRACADABRA"))))
+  (let* ((command
+	   (tr "AB" "ab"))
+         (output
+	   (rashell:run-filter command '("ABRACADABRA"))))
     (assert-type output 'list)
     (assert= 1 (length output))
     (assert-string= "abRaCaDabRa" (first output))
-    (assert-eql :EXITED (rashell:command-status command))
+    (assert-eql :exited (rashell:command-status command))
     (assert-eql 0 (nth-value 1 (rashell:command-status command)))))
 
 (define-testcase test-run-filter/array ()
-  (let* ((command (tr "AB" "ab"))
-         (output (rashell:run-filter command #("ABRACADABRA"))))
+  (let* ((command
+	   (tr "AB" "ab"))
+         (output
+	   (rashell:run-filter command #("ABRACADABRA"))))
     (assert-type output 'array)
     (assert= 1 (length output))
     (assert-string= "abRaCaDabRa" (aref output 0))
-    (assert-eql :EXITED (rashell:command-status command))
+    (assert-eql :exited (rashell:command-status command))
     (assert-eql 0 (nth-value 1 (rashell:command-status command)))))
+
+(define-testcase test-define-filter-function/list ()
+  (multiple-value-bind (output command)
+      (filter '("ABRACADABRA") "AB" "ab")
+    (assert-type output 'list)
+    (assert= 1 (length output))
+    (assert-string= "abRaCaDabRa" (first output))
+    (assert-eql :exited (rashell:command-status command))
+    (assert-eql 0 (nth-value 1 (rashell:command-status command)))))
+
+(define-testcase test-define-filter-function/array ()
+  (multiple-value-bind (output command)
+      (filter #("ABRACADABRA") "AB" "ab")
+    (assert-type output 'array)
+    (assert= 1 (length output))
+    (assert-string= "abRaCaDabRa" (aref output 0))
+    (assert-eql :exited (rashell:command-status command))
+    (assert-eql 0 (nth-value 1 (rashell:command-status command)))))
+
+(define-testcase test-define-filter-macro/stream ()
+  (let ((output
+	  nil)
+	(input
+	  (make-string-input-stream "ABRACADABRA")))
+    (do-filter (line ("AB" "ab") input)
+      (push line output))
+    (assert= 1 (length output))
+    (assert-string= "abRaCaDabRa" (first output))))
+
+(define-testcase test-define-query-function ()
+  (multiple-value-bind (output command)
+      (query)
+    (assert-type output 'list)
+    (assert= 2 (length output))
+    (assert-string= "abracadabra" (first output))
+    (assert-string= "ABRACADABRA" (second output))
+    (assert-eql :exited (rashell:command-status command))
+    (assert-eql 0 (nth-value 1 (rashell:command-status command)))))
+
+(define-testcase test-define-query-macro ()
+  (let ((output
+	  nil))
+    (do-query (line nil)
+      (push line output))
+    (assert-type output 'list)
+    (assert= 2 (length output))
+    (assert-string= "abracadabra" (second output))
+    (assert-string= "ABRACADABRA" (first output))))
 
 (define-testcase rashell-testsuite ()
   "Run tests for the rashell module."
@@ -184,6 +248,11 @@ DabRa" output)
   (test-run-filter/multiline-string)
   (test-run-filter/nontrimmed-string)
   (test-run-filter/list)
-  (test-run-filter/array)) 
+  (test-run-filter/array)
+  (test-define-filter-function/list) 
+  (test-define-filter-function/array)
+  (test-define-filter-macro/stream)
+  (test-define-query-function)
+  (test-define-query-macro))
 
 ;;;; End of file `rashell.lisp'
