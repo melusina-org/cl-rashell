@@ -17,7 +17,7 @@
 
 test_sbcl()
 {
-    sbcl --noinform --disable-debugger "$@"
+    sbcl --dynamic-space-size 3741824 --noinform --disable-debugger "$@"
 }
 
 test_main()
@@ -25,7 +25,7 @@ test_main()
     test_sbcl --eval '
 (unless (ql:where-is-system "rashell/test")
  (push #p"./" ql:*local-project-directories*))'\
-	      --eval '(ql:quickload "rashell/test")'\
+	      --eval '(ql:quickload "rashell/test" :silent t)'\
 	      --eval '(if (rashell/test:run-all-tests)(uiop:quit 0)(uiop:quit 1))'
 }
 
