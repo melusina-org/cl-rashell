@@ -171,6 +171,12 @@ The SPEC is a property list where the following properties are allowed:
   :PROGRAM PATH-TO-PROGRAM
     The path to the program run by the function NAME.
 
+  :SUBCOMMAND SUBCOMMAND
+    A SUBCOMMAND is a word or a list of words written after the PATH-TO-PROGRAM
+    and before other options in the argument vector.  Some programs, like `git',
+    `svn', `pkg', `port', `docker' for instance use this calling convention and
+    some refer to this part of the command line as a subcommand.
+
   :REFERENCE
     A reference to be added to the documentation.
 
@@ -204,7 +210,8 @@ TODO
         (program
           (getf spec :program))
         (prepare-argv-body
-          (let ((argv-rest (getf spec :rest)))
+          (let ((argv-rest
+		  (getf spec :rest)))
             (cond
               ((eq (first argv-rest) 'append)
                (rest argv-rest))
@@ -212,6 +219,8 @@ TODO
                (list argv-rest))))))
     (dolist (option options)
       (push (define-command/prepare-argv (first option) (rest option)) prepare-argv-body))
+    (when (getf spec :subcommand)
+      (push (cons 'list (ensure-list (getf spec :subcommand))) prepare-argv-body))
     `(defun ,name (,@defun-argv)
        ,docstring
        (let ((command-argv
