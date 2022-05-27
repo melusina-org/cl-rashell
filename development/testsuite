@@ -1,34 +1,63 @@
 #!/bin/sh
 
-### testsuite -- Run unit tests
+# testsuite — Run unit tests
 
-# Rashell (https://github.com/michipili/cl-rashell)
-# This file is part of Rashell
+# Rashell (https://github.com/melusina-org/cl-rashell)
+# This file is part of Rashell.
 #
-# Copyright © 2017–2021 Michaël Le Barbier
-#
-# This file must be used under the terms of the MIT license.
+# Copyright © 2017–2022 Michaël Le Barbier
+# All rights reserved.
+
+# This file must be used under the terms of the MIT License.
 # This source file is licensed as described in the file LICENSE, which
 # you should have received as part of this distribution. The terms
-# are also available at
-# https://opensource.org/licenses/MIT
+# are also available at https://opensource.org/licenses/MIT
 
 : ${TOPLEVELDIR:=$(git rev-parse --show-toplevel)}
+: ${testsuitesystem:="org.melusina.rashell/testsuite"}
+: ${testsuiteclean:='no'}
+: ${testsuitelisp:='sbcl'}
 
-test_sbcl()
+testsuite_lisp()
 {
-    sbcl --dynamic-space-size 3741824 --noinform --disable-debugger "$@"
+    case "${testsuitelisp}" in
+	sbcl)
+	    sbcl --noinform --disable-debugger "$@"
+	    ;;
+	ccl|ccl64)
+	    ccl64 "$@"
+	    ;;
+    esac
 }
 
-test_main()
+testsuite_run()
 {
-    test_sbcl --eval '
-(unless (ql:where-is-system "rashell/test")
- (push #p"./" ql:*local-project-directories*))'\
-	      --eval '(ql:quickload "rashell/test" :silent t)'\
-	      --eval '(if (rashell/test:run-all-tests)(uiop:quit 0)(uiop:quit 1))'
+    if [ $# -eq 0 ]; then
+	set -- 'run-all-tests'
+    fi
+    testsuite_lisp\
+	--eval "(ql:quickload \"${testsuitesystem}\" :silent t)"\
+	--eval "(${testsuitesystem}:$1)"
 }
 
-test_main "$@"
+testsuite_main()
+{
+    while getopts 'CL:' OPTARG; do
+	case "${OPTION}" in
+	    C)	testsuiteclean='yes';;
+	    L)	testsuitelisp="${OPTARG}";;
+	esac
+    done
 
-### End of file `testsuite'
+    shift $((OPTIND - 1))
+
+    if [ "${testsuiteclean}" = 'yes' ]; then
+	(cd "${TOPLEVELDIR}" && development/clean)
+    fi
+    
+    testsuite_run "$@"
+}
+
+testsuite_main "$@"
+
+# End of file `testsuite'

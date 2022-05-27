@@ -1,17 +1,17 @@
-;;;; posix.lisp -- Posix utilities
+;;;; posix.lisp — Posix utilities
 
-;;;; Rashell (https://github.com/michipili/cl-rashell)
-;;;; This file is part of Rashell
+;;;; Rashell (https://github.com/melusina-org/cl-rashell)
+;;;; This file is part of Rashell.
 ;;;;
-;;;; Copyright © 2017–2020 Michaël Le Barbier
-;;;;
-;;;; This file must be used under the terms of the MIT license.
+;;;; Copyright © 2017–2022 Michaël Le Barbier
+;;;; All rights reserved.
+
+;;;; This file must be used under the terms of the MIT License.
 ;;;; This source file is licensed as described in the file LICENSE, which
 ;;;; you should have received as part of this distribution. The terms
-;;;; are also available at
-;;;; https://opensource.org/licenses/MIT
+;;;; are also available at https://opensource.org/licenses/MIT
 
-(in-package #:rashell)
+(in-package #:org.melusina.rashell)
 
 
 ;;;;
@@ -153,7 +153,7 @@ The options are
 			   :environment environment
 			   :follow follow)))
 
-(defmacro do-find ((var (predicate-expr pathname &key directory environment follow) result) &body body)
+(defmacro do-find ((var (predicate-expr pathname &key directory environment follow) &optional result) &body body)
   `(do-query (,var (command-find ,predicate-expr ,pathname
 				 :directory ,directory
 				 :environment ,environment
@@ -164,7 +164,6 @@ The options are
 
 (defun test (predicate-expr pathname &key follow directory environment)
   "Test the meta-data of file PATHNAME against PREDICATE-EXPRESSION.
-
 If the file does not exist, the test evaluates to NIL."
   (declare (ignore environment))
   (let (stat)
@@ -189,7 +188,8 @@ If the file does not exist, the test evaluates to NIL."
 	      (error "~S: Invalid predicate form." predicate-form))))
 	 (eval-predicate (predicate-form)
            (case (taste predicate-form)
-             ((:prune :print) t)
+             ((:prune :print)
+	      t)
              (:has-kind
               (let ((mode-mask
                       (ecase (second predicate-form)
@@ -232,7 +232,7 @@ If the file does not exist, the test evaluates to NIL."
              (:and
               (loop for subform in (rest predicate-form) always (eval-predicate subform)))
              (:or
-              (loop for subform in (rest predicate-form) never (not (eval-predicate subform)))))))
+              (loop for subform in (rest predicate-form) thereis (eval-predicate subform))))))
       (when stat (eval-predicate predicate-expr)))))
 
 (define-utility cp (pathname-list destination)
@@ -291,7 +291,9 @@ If the file does not exist, the test evaluates to NIL."
 
 (define-filter awk (awkscript)
   ((sepstring :option "-F")
-   (assignment :option "-v" :multiple t :to-string (lambda (x) (concatenate 'string (first x) "=" (second x)))))
+   (assignment :option "-v"
+	       :multiple t
+	       :to-string (lambda (x) (concatenate 'string (first x) "=" (second x)))))
   (:program #p"/usr/bin/awk"
    :reference "http://pubs.opengroup.org/onlinepubs/9699919799/utilities/awk.html"
    :documentation "Run awk(1) with the given AWKSCRIPT on INPUT."

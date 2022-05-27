@@ -1,17 +1,17 @@
-;;;; rashell.lisp – Resilient replicant Shell Programming Library for Common Lisp
+;;;; rashell.lisp — Resilient replicant Shell Programming Library for Common Lisp
 
-;;;; Rashell (https://github.com/michipili/cl-rashell)
-;;;; This file is part of Rashell
+;;;; Rashell (https://github.com/melusina-org/cl-rashell)
+;;;; This file is part of Rashell.
 ;;;;
-;;;; Copyright © 2017–2020 Michaël Le Barbier
-;;;;
-;;;; This file must be used under the terms of the MIT license.
+;;;; Copyright © 2017–2022 Michaël Le Barbier
+;;;; All rights reserved.
+
+;;;; This file must be used under the terms of the MIT License.
 ;;;; This source file is licensed as described in the file LICENSE, which
 ;;;; you should have received as part of this distribution. The terms
-;;;; are also available at
-;;;; https://opensource.org/licenses/MIT
+;;;; are also available at https://opensource.org/licenses/MIT
 
-(in-package #:rashell)
+(in-package #:org.melusina.rashell)
 
 ;;;;
 ;;;; Signal Table
@@ -95,7 +95,19 @@ conversion is only used when operation the command as a query.")
     :documentation
     "The documentation of the command instance."))
   (:documentation
-   "The COMMAND structure captures the parameters used to start an external program."))
+   "The COMMAND structure captures the parameters and state of an external program.
+The current state of the external program can be examined with the methods
+
+  COMMAND-STATUS, COMMAND-INPUT, COMMAND-OUTPUT and COMMAND-ERROR."))
+
+(defun make-command (&rest initargs
+		     &key documentation object-of-output-line
+			  environment directory argv program
+		     &allow-other-keys)
+  "Make a command."
+  (declare (ignore documentation object-of-output-line
+		   environment directory argv program))
+  (apply #'make-instance 'command initargs))
 
 
 ;;;;
@@ -143,11 +155,11 @@ conversion is only used when operation the command as a query.")
   (concatenate 'list argv '(&key) '(directory environment) (mapcar #'first options)))
 
 (defmacro define-command (name argv options spec)
-  "Define a function NAME that can run a command according to SPEC.
+  "Define a function NAME that makes a command according to SPEC.
 
 The function NAME accepts arguments ARGV and optional arguments as specified by the OPTIONS
-parameter, see below.  The SPEC parameter is a property list specifiying various aspects of how the
-command is run.
+parameter, see below.  The SPEC parameter is a property list specifiying various aspects
+of how the command is run.
 
 The OPTIONS parameter is a list of option specifications. An option specification is a list
 starting with a symbol, the OPTION-NAME, which is used to label the optional parameter of
@@ -158,9 +170,9 @@ the function NAME. The allowed forms for option specifications are:
     FLAG-STRING is added to the command-lin of the external program being run.
 
   (OPTION-NAME :option OPTION-STRING [:to-string CONVERT] [:multiple MULTIPLE-FLAG])
-    The parameter OPTION-NAME is interpreted as an arbitrary value is a string, or is converted to a
-    string either by applying the function passed as the :to-string property, 
-    or by using `write-to-string' if none of the preceeding rules apply.
+    The parameter OPTION-NAME is interpreted as an arbitrary value is a string, or
+    is converted to a string either by applying the function passed as the :TO-STRING
+    property, or by using `WRITE-TO-STRING' if none of the preceeding rules apply.
 
     When set, the MULTIPLE-FLAG makes the OPTION-NAME accept a list or a single value. 
     The elements of this list are converted to strings as described above and each of
@@ -195,12 +207,7 @@ The SPEC is a property list where the following properties are allowed:
     When this function returns a second value equal to :DROP, the returned value should be
     dropped from the stream.
 
-    See `DO-QUERY' and `RUN-QUERY'.
-
-TODO
-- Describe the ENVIRONMENT parameter.
-- Describe the WORKDIR parameter.
-"
+    See `DO-QUERY', `RUN-QUERY' and `DEFINE-QUERY'."
   (let ((docstring
           (getf spec :documentation))
         (object-of-output-line
@@ -225,13 +232,13 @@ TODO
        ,docstring
        (let ((command-argv
                (mapcar #'define-command/to-string (append ,@prepare-argv-body))))
-         (make-instance 'command
-                        :program ,program
-                        :argv command-argv
-                        :directory directory
-                        :environment environment
-                        :object-of-output-line ,object-of-output-line
-                        :documentation ,docstring)))))
+         (make-command
+          :program ,program
+          :argv command-argv
+          :directory directory
+          :environment environment
+          :object-of-output-line ,object-of-output-line
+          :documentation ,docstring)))))
 
 
 ;;;;
@@ -320,27 +327,55 @@ the process changes. The function takes the command as an argument.")
                                    output if-output-exists
                                    error if-error-exists
                                    status-hook)
-    (with-slots (program argv directory environment process) command
-      (when process
-        (error "The COMMAND has already been started."))
-      (setf process
-            (sb-ext:run-program
-             program argv
-	     :directory (cond
-			  ((null directory)
-			   nil)
-			  ((pathnamep directory)
-			   (namestring directory))
-			  (t
-			   directory))
-             :environment environment
-             :input input :if-input-does-not-exist if-input-does-not-exist
-             :output output :if-output-exists if-output-exists
-             :error error :if-error-exists if-error-exists
-             :wait nil
-             :status-hook status-hook
-	     ))
-      (values command))))
+    (flet ((make-environment (spec)
+	     (let ((mode
+		     (case (first spec)
+		       ((:supersede :append)
+			(first spec))
+		       (t
+			:append)))
+		   (bindings
+		     (case (first spec)
+		       ((:supersede :append)
+			(rest spec))
+		       (t
+			spec))))
+	       (append
+		(loop :for binding :in bindings
+		      :collect
+		      (cond
+			((stringp binding)
+			 binding)
+			((consp binding)
+			 (format nil "~A=~A" (car binding) (cdr binding)))
+			(t
+			 (error "Cannot interpret environment binding ~S" binding))))
+		(ecase mode
+		  (:supersede
+		   nil)
+		  (:append
+		   (sb-ext:posix-environ)))))))
+      (with-slots (program argv directory environment process) command
+	(when process
+          (error "The COMMAND has already been started."))
+	(setf process
+              (sb-ext:run-program
+               program argv
+	       :directory (cond
+			    ((null directory)
+			     nil)
+			    ((pathnamep directory)
+			     (namestring directory))
+			    (t
+			     directory))
+               :environment (make-environment environment)
+               :input input :if-input-does-not-exist if-input-does-not-exist
+               :output output :if-output-exists if-output-exists
+               :error error :if-error-exists if-error-exists
+               :wait nil
+               :status-hook status-hook
+	       ))
+	(values command)))))
 
 (defun command-p (object)
   "T if object is a command, NIL otherwise."
@@ -371,8 +406,8 @@ The status can be one of
     When the process terminated after receiving a signal. The signal number
     that terminated the process is returned as a second value.")
   #+sbcl
-  (:method ((command command))
-    (with-slots (process) command
+  (:method ((instance command))
+    (with-slots (process) instance
       (let ((process-status
               (if process
                   (sb-ext:process-status process)
@@ -387,24 +422,24 @@ The status can be one of
   (:documentation
    "The standard input of the external process running the command or NIL.")
   #+sbcl
-  (:method ((command command))
-    (with-slots (process) command
+  (:method ((instance command))
+    (with-slots (process) instance
         (when process (sb-ext:process-input process)))))
 
 (defgeneric command-output (command)
   (:documentation
    "The standard output of the external process running the command or NIL.")
   #+sbcl
-  (:method ((command command))
-    (with-slots (process) command
+  (:method ((instance command))
+    (with-slots (process) instance
         (when process (sb-ext:process-output process)))))
 
 (defgeneric command-error (command)
   (:documentation
    "The standard error of the external process running the command or NIL.")
   #+sbcl
-  (:method ((command command))
-    (with-slots (process) command
+  (:method ((instance command))
+    (with-slots (process) instance
       (when process (sb-ext:process-error process)))))
 
 (defgeneric kill-command (command signal)
@@ -414,13 +449,13 @@ The SIGNAL can be either an integer or one of the keyword in `*SIGNAL-TABLE*'.
 When the PROCESS for command is in :PENDING state, no action is taken
 and NIL is returned.")
   #+sbcl
-  (:method ((command command) signal)
+  (:method ((instance command) signal)
     (declare ((or keyword integer) signal))
     (let ((signal-value
             (if (keywordp signal)
                 (or (cdr (assoc signal *signal-table*))
                     (error "The keyword ~A is not associated to a numeric signal value." signal)))))
-      (with-slots (process) command
+      (with-slots (process) instance
         (when process (sb-ext:process-kill process signal-value))))))
 
 (defgeneric wait-command (command &optional check-for-stopped)
@@ -430,27 +465,30 @@ When CHECK-FOR-STOPPED is T, also returns when process is stopped.
 When the command is still :PENDING it returns immediately.
 Returns COMMAND.")
   #+sbcl
-  (:method ((command command) &optional check-for-stopped)
+  (:method ((instance command) &optional check-for-stopped)
     (progn
-      (sb-ext:process-wait (slot-value command 'process) check-for-stopped)
-      command)))
+      (sb-ext:process-wait (slot-value instance 'process) check-for-stopped)
+      instance)))
 
 (defgeneric close-command (command)
   (:documentation
-   "Close all streams connected to the process running the COMMAND and stop maintaining the status slot.
+   "Close the COMMAND.
+
+This closes all streams connected to the process running the COMMAND and also
+stops maintaining the status slot.
 Returns COMMAND.
 TODO:
 - Clarify when to use this method – after or before the process exited?")
   #+sbcl
-  (:method ((command command))
-    (with-slots (process) command
+  (:method ((instance command))
+    (with-slots (process) instance
       (and process (sb-ext:process-close process)))
-    (values command)))
+    (values instance)))
 
-(defmethod print-object ((command command) stream)
-  (print-unreadable-object (command stream :type t :identity t)
-    (print-object (slot-value command 'program) stream)
-    (multiple-value-bind (status code) (command-status command)
+(defmethod print-object ((instance command) stream)
+  (print-unreadable-object (instance stream :type t :identity t)
+    (print-object (slot-value instance 'program) stream)
+    (multiple-value-bind (status code) (command-status instance)
       (write-string " :" stream)
       (write-string (symbol-name status) stream)
       (case status
@@ -458,42 +496,45 @@ TODO:
          (write-char #\Space stream)
          (write code :stream stream))))))
 
-(defmethod describe-object ((command command) stream)
-  (print-object command stream)
+(defmethod describe-object ((instance command) stream)
+  (print-object instance stream)
   (format stream "~%  [standard-object]~%~%")
-  (format stream "A command to run the program ~S on the arguments ~S.~%"
-          (slot-value command 'program)
-          (slot-value command 'argv))
-  (multiple-value-bind (status code) (command-status command)
-    (format stream "~%Status:~%  ")
+  (format stream "~& A command to run the program ~S on the arguments ~S."
+          (slot-value instance 'program)
+          (slot-value instance 'argv))
+  (multiple-value-bind (status code) (command-status instance)
+    (format stream "~&Status:")
     (ecase status
       (:pending
-       (format stream "The command has not been started yet.~%"))
+       (format stream "~& The command has not been started yet."))
       (:running
-       (format stream "The command is currently running.~%"))
+       (format stream "~& The command is currently running."))
       (:stopped
-       (format stream "The command has been stopped by the operating system. It can be
-resumed by sending the :CONTINUE signal.~%"))
+       (format stream "~& The command has been stopped by the operating system. It can be
+resumed by sending the :CONTINUE signal."))
       (:exited
-       (format stream "The command terminated normally by calling exit with the status code ~D.~%" code))
+       (format
+	stream
+	"~& The command terminated normally by calling exit with the status code ~D."
+	code))
       (:signaled
-       (format stream "The command terminated because it received the signal ~D." code))))
-  (when (command-output command)
-    (format stream "~&Output Stream:~%")
-    (if (open-stream-p (command-output command))
-        (format stream "  The output stream of the command is open and ~S could be read from it.~%"
-                (peek-char nil (command-output command) nil nil))
-        (format stream "  The output stream of the command is closed.~%")))
-  (when (command-error command)
-    (format stream "~&Error Stream:~%")
-    (if (open-stream-p (command-error command))
-        (format stream "  The error stream of the command is open and ~S could be read from it.~%"
-                (peek-char nil (command-error command) nil nil))
-        (format stream "  The error stream of the command is closed.~%"))))
+       (format stream "~& The command terminated because it received the signal ~D." code))))
+  (when (command-output instance)
+    (format stream "~&Output Stream:")
+    (if (open-stream-p (command-output instance))
+        (format stream "~& The output stream of the command is open and ~S could be read from it."
+                (peek-char nil (command-output instance) nil nil))
+        (format stream "~& The output stream of the command is closed.")))
+  (when (command-error instance)
+    (format stream "~&Error Stream:")
+    (if (open-stream-p (command-error instance))
+        (format stream "~& The error stream of the command is open and ~S could be read from it."
+                (peek-char nil (command-error instance) nil nil))
+        (format stream "~& The error stream of the command is closed."))))
 
 
 ;;;;
-;;;; Hardwired Conversation
+;;;; Arranged Conversation
 ;;;;
 
 (defun arranged-conversation (clauses)
@@ -517,13 +558,13 @@ can be one of the following forms:
 
 Bugs:
 - The implementation does not validate the clauses.
-- The implementation generates a shell script transferred
+- The implementation generates a shell script transfered
   as an argument to /bin/sh -c which limits the number of clauses
-  that can consitute an arranged conversation.
+  that can constitute an arranged conversation.
 - The implementation pass all strings to shell as-is in single quotes, which
   is extremly brittle.
 
-(The intended use of HARDWIRED-CONVERSATION is for testing and debugging.)"
+The intended use of ARRANGED-CONVERSATION is for testing and debugging."
   (labels
       ((write-script (clauses)
          (write-string "write_output_line()
@@ -571,10 +612,10 @@ read_input_line()
 The arranged conversation is driven by the following clauses:
 ~S
 " clauses)))
-    (make-instance 'command
-                   :program #p"/bin/sh"
-                   :argv (list "-c" (prepare-script clauses))
-                   :documentation (prepare-documentation clauses))))
+    (make-command
+     :program #p"/bin/sh"
+     :argv (list "-c" (prepare-script clauses))
+     :documentation (prepare-documentation clauses))))
 
 
 ;;;;
@@ -615,7 +656,8 @@ met an error condition." (command-error-command condition))
        (format stream "  This process provided the following diagnostic:
 
    ~A"
-               (command-error-error condition)))))
+               (command-error-error condition)))
+     (describe (command-error-command condition) stream)))
   (:documentation
    "This condition is signaled when an external process executing a
 command meets an error condition."))
@@ -667,7 +709,7 @@ accumulated standard error is discarded."
   "Define a function NAME that runs utility according to SPEC.
 An intermediary function creating the corresponding command (without
 running it) is also defined. The name of this intermediary function
-is construced by prefixing COMMAND- to the provided NAME."
+is constructed by prefixing COMMAND- to the provided NAME."
   (let* ((package
 	   (symbol-package name))
 	 (command-name
@@ -677,12 +719,12 @@ is construced by prefixing COMMAND- to the provided NAME."
 	 (defun-argv
 	   (define-command/defun-argv argv options))
 	 (invocation-argv
-	   (loop for argv in (define-command/defun-argv argv options)
-		 for seen-keys = nil then (or seen-keys (eq argv '&key))
-		 unless (eq argv '&key)
-		 append (if seen-keys
-			    (list (make-keyword argv) argv)
-			    (list argv)))))
+	   (loop :for argv :in (define-command/defun-argv argv options)
+		 :for seen-keys = (eq argv '&key) :then (or seen-keys (eq argv '&key))
+		 :unless (eq argv '&key)
+		 :append (if seen-keys
+			     (list (make-keyword argv) argv)
+			     (list argv)))))
     `(progn
        (define-command ,command-name ,argv ,options ,spec)
        (defun ,utility-name ,defun-argv
@@ -733,7 +775,10 @@ of the command are returned as second and third value."
               (get-output-stream-string command-output)
               (get-output-stream-string command-error)))
            (sloppy-exit-status ()
-             :report "Ignore special exit status and proceed as if the command failed with exit status 1."
+             :report #.(concatenate
+			'string
+			"Ignore special exit status and proceed as if "
+			"the command failed with exit status 1.")
              (values
               nil
               (get-output-stream-string command-output)
@@ -945,11 +990,19 @@ The returning form is RESULT."
 (defun run-filter (command input)
   "Run a query process running the given COMMAND on INPUT.
 
-When INPUT is a stream, a pathname, or a string, the returned value is a string.
+When INPUT is a stream, the returned value is a string holding the result
+of processing INPUT through the filter.
+
+When INPUT is a pathname, the returned value is a string holding the result
+of processing the contents of the file designated by this pathname through
+the filter.
+
+When INPUT is or a string, the returned value is a string holding the result
+of processing the contents of the string through the filter.
 
 When INPUT is a string list the returned value is a string list.
 
-When INPUT is an array, the returned values is an array of strings."
+When INPUT is an array, the returned value is an array of strings."
   (labels
       ((stream-of-string-list (lines)
          (let ((buffer (make-string-output-stream)))

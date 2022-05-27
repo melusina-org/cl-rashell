@@ -1,17 +1,17 @@
-;;;; util.lisp -- Utilities
+;;;; util.lisp — Utilities
 
-;;;; Rashell (https://github.com/michipili/cl-rashell)
-;;;; This file is part of Rashell
+;;;; Rashell (https://github.com/melusina-org/cl-rashell)
+;;;; This file is part of Rashell.
 ;;;;
-;;;; Copyright © 2017–2020 Michaël Le Barbier
-;;;;
-;;;; This file must be used under the terms of the MIT license.
+;;;; Copyright © 2017–2022 Michaël Le Barbier
+;;;; All rights reserved.
+
+;;;; This file must be used under the terms of the MIT License.
 ;;;; This source file is licensed as described in the file LICENSE, which
 ;;;; you should have received as part of this distribution. The terms
-;;;; are also available at
-;;;; https://opensource.org/licenses/MIT
+;;;; are also available at https://opensource.org/licenses/MIT
 
-(in-package #:rashell)
+(in-package #:org.melusina.rashell)
 
 (defun ensure-list (anything)
   (if (listp anything)
@@ -24,13 +24,14 @@
         (pattern-length (length pattern)))
     (labels
         ((match-step (i j)
-           (case (when (< i pattern-length) (elt pattern i))
+           (case (when (and (<= j text-length) (< i pattern-length))
+		   (elt pattern i))
              ((nil)
               (eq j text-length))
              (#\?
               (and (< j text-length) (match-step (1+ i) (1+ j))))
              (#\*
-              (or (match-step (1+ i) j) (match-step i (1+ j))))
+	      (or (match-step (1+ i) j) (match-step i (1+ j))))
              (t
               (when (< j text-length)
                 (and (char= (elt pattern i) (elt text j))

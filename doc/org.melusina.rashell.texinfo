@@ -1,0 +1,192 @@
+\input texinfo   @c -*-texinfo-*-
+@c %**start of header
+@setfilename org.melusina.rashell.info
+@settitle Rashell Manual
+@c %**end of header
+
+@c for install-info
+@dircategory Software development
+@direntry
+* rashell:           Common Lisp interface to external programs.
+@end direntry
+
+@copying
+Rashell software and associated documentation is distributed
+under the terms of the MIT License.
+
+@quotation
+Copyright © 2017–2022 Michaël Le Barbier
+All rights reserved.
+
+This file must be used under the terms of the MIT License.
+This source file is licensed as described in the file LICENSE, which
+you should have received as part of this distribution. The terms
+are also available at https://opensource.org/licenses/MIT
+@end quotation
+
+@end copying
+@titlepage
+
+@title Rashell Manual
+@subtitle draft version
+
+@c The following two commands start the copyright page.
+@page
+@vskip 0pt plus 1filll
+@insertcopying
+
+@end titlepage
+
+@contents
+
+@c We use @andkey, etc to escape & from TeX in lambda lists --
+@c so we need to define them for info as well.
+@macro andallowotherkeys
+&allow-other-keys
+@end macro
+@macro andoptional
+&optional
+@end macro
+@macro andrest
+&rest
+@end macro
+@macro andkey
+&key
+@end macro
+@macro andbody
+&body
+@end macro
+
+@ifnottex
+
+@include include/ifnottex.texinfo
+
+@node Top
+@comment  node-name,  next,  previous,  up
+@top Rashell
+
+@insertcopying
+
+@menu
+* Introduction::
+* Making Commands::
+* Running Commands::
+* Defining Commands::
+* Predefined Commands::
+@end menu
+
+@end ifnottex
+
+@node Introduction, Making Commands, Top, Top
+@chapter Introduction
+
+The @b{Rashell} package defines primitives which combine ease of use
+with the ability to write maintainable and resilient programs
+leveraging the full power of UNIX. These primitives implements common
+patterns to interact with UNIX utilities as subprocesses. These
+patterns either yield a string or a sequence of lines, they will also
+adequately report error conditions on subprocesses.
+
+The @code{command} class captures all the characterestics of a Unix
+command: the path to an external program, the program arguments,
+execution directory, environment, I/O redirections and optionally an
+external process running that command.  While @code{command}s can be
+created with @code{make-instance} the macro @code{define-command}
+makes it easy to define functions creating commands, translating Lisp
+function arguments into a UNIX-style vector.
+
+Once created, a command can be run according to several treament
+patterns, either as a utility (commands like @code{cp}, @code{rm},
+compilers), as a test (commands like @code{test}), as a query
+(commands like @code{find}) or a filter (commands like @code{sed} and
+@code{awk}).
+
+The @b{Rashell} package defines function to create commands for some
+of the most commonly used UNIX utilities: @code{awk}, @code{cat},
+@code{cp}, @code{df}, @code{du} and a few others.
+There is also useful macros @code{define-utility},
+@code{define-filter}, @code{define-query} and @code{define-test} which
+allow the user to create functions that make and run commands. These
+macros are described in the section @i{Defining Commands}.
+
+Currently, the @b{Rashell} package only targets SBCL.
+
+
+@node Making Commands, Running Commands, Introduction, Top
+@chapter Making and Examining Commands
+
+The @code{command} class captures all the characteristics of
+a UNIX command: program path, argument vector, environment, path to
+working directory and execution status.
+
+When a @code{command} is created, its execution status is
+@code{pending} which means that no external process has ever been
+attached to the command.  When the command is run with one of the
+functions @code{run-utility}, @code{run-test} or @code{run-query}, an
+external process is created and attached to the command.  The status
+of the command is then @code{:running} and is updated again when the
+external process terminates, with one of the status @code{:exited},
+@code{:stopped} or @code{:signalled}.
+
+@include include/class-org.melusina.rashell-command.texinfo
+@include include/fun-org.melusina.rashell-make-command.texinfo
+@include include/fun-org.melusina.rashell-close-command.texinfo
+@include include/fun-org.melusina.rashell-command-error.texinfo
+@include include/fun-org.melusina.rashell-command-input.texinfo
+@include include/fun-org.melusina.rashell-command-output.texinfo
+@include include/fun-org.melusina.rashell-command-p.texinfo
+@include include/fun-org.melusina.rashell-command-status.texinfo
+
+
+@node Running Commands, Defining Commands, Making Commands, Top
+@chapter Running Commands
+
+Once created a command can be run according to one of the standard
+interaction patterns: as a utility, a test, a query, a filter.
+
+@include include/fun-org.melusina.rashell-run-utility.texinfo
+@include include/fun-org.melusina.rashell-run-test.texinfo
+@include include/fun-org.melusina.rashell-run-query.texinfo
+@include include/macro-org.melusina.rashell-do-query.texinfo
+@include include/var-org.melusina.rashell-star-query-output-line-number-star.texinfo
+@include include/fun-org.melusina.rashell-run-filter.texinfo
+@include include/macro-org.melusina.rashell-do-filter.texinfo
+
+The functions @code{run-command}, @code{wait-command} and
+@code{kill-command} can be used to finely control interaction with an
+external program running a command.
+
+@include include/fun-org.melusina.rashell-run-command.texinfo
+@include include/fun-org.melusina.rashell-wait-command.texinfo
+@include include/fun-org.melusina.rashell-kill-command.texinfo
+@include include/condition-org.melusina.rashell-command-error.texinfo
+
+
+@node Defining Commands, Predefined Commands, Running Commands, Top
+@chapter Defining Commands
+
+@include include/macro-org.melusina.rashell-define-command.texinfo
+@include include/macro-org.melusina.rashell-define-utility.texinfo
+@include include/macro-org.melusina.rashell-define-test.texinfo
+@include include/macro-org.melusina.rashell-define-query.texinfo
+@include include/macro-org.melusina.rashell-define-filter.texinfo
+
+
+@chapter Predefined Commands
+@node Predefined Commands, , Defining Commands, Top
+
+@include include/fun-org.melusina.rashell-arranged-conversation.texinfo
+@include include/fun-org.melusina.rashell-command-awk.texinfo
+@include include/fun-org.melusina.rashell-command-cat.texinfo
+@include include/fun-org.melusina.rashell-command-cp.texinfo
+@include include/fun-org.melusina.rashell-command-df.texinfo
+@include include/fun-org.melusina.rashell-command-du.texinfo
+@include include/fun-org.melusina.rashell-command-find.texinfo
+@include include/fun-org.melusina.rashell-command-ln.texinfo
+@include include/fun-org.melusina.rashell-command-mkdir.texinfo
+@include include/fun-org.melusina.rashell-command-mv.texinfo
+@include include/fun-org.melusina.rashell-command-rm.texinfo
+@include include/fun-org.melusina.rashell-command-sed.texinfo
+@include include/fun-org.melusina.rashell-test.texinfo
+
+@bye

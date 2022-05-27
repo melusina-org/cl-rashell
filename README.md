@@ -2,8 +2,8 @@
 
 The **Rashell** package defines primitives which combine ease of use
 with the ability to write maintainable and resilient programs
-leveraging the full power of Unix. These primitives implements common
-patterns to interact with Unix utilities as subprocesses. These
+leveraging the full power of UNIX. These primitives implements common
+patterns to interact with UNIX utilities as subprocesses. These
 patterns usually yield a string or a sequence of lines, they will also
 adequately report error conditions on subprocesses.
 
@@ -25,9 +25,9 @@ compatible with the SBCL implementation of Common Lisp.
 The **Rashell** package comes with documentation in [PDF][doc-pdf],
 [HTML][doc-html] and [INFO][doc-info] format.
 
-  [doc-html]: https://foretspaisibles.github.io/assets/cl-rashell/rashell.html
-  [doc-pdf]: https://foretspaisibles.github.io/assets/cl-rashell/rashell.pdf
-  [doc-info]: https://foretspaisibles.github.io/assets/cl-rashell/rashell.info
+  [doc-html]: https://melusina-org.github.io/asset/cl-rashell/rashell.html
+  [doc-pdf]: https://melusina-org.github.io/asset/cl-rashell/rashell.pdf
+  [doc-info]: https://melusina-org.github.io/asset/cl-rashell/rashell.info
 
 
 ## Future Plans

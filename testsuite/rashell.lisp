@@ -1,17 +1,17 @@
-;;;; rashell.lisp – Resilient replicant Shell Programming Library for Common Lisp
+;;;; rashell.lisp — Resilient replicant Shell Programming Library for Common Lisp
 
-;;;; Rashell (https://github.com/michipili/cl-rashell)
-;;;; This file is part of Rashell
+;;;; Rashell (https://github.com/melusina-org/cl-rashell)
+;;;; This file is part of Rashell.
 ;;;;
-;;;; Copyright © 2017–2020 Michaël Le Barbier
-;;;;
-;;;; This file must be used under the terms of the MIT license.
+;;;; Copyright © 2017–2022 Michaël Le Barbier
+;;;; All rights reserved.
+
+;;;; This file must be used under the terms of the MIT License.
 ;;;; This source file is licensed as described in the file LICENSE, which
 ;;;; you should have received as part of this distribution. The terms
-;;;; are also available at
-;;;; https://opensource.org/licenses/MIT
+;;;; are also available at https://opensource.org/licenses/MIT
 
-(in-package #:rashell/test)
+(in-package #:org.melusina.rashell/testsuite)
 
 (rashell:define-command cp (pathname-list destination)
   ((follow :flag "-H")
@@ -41,6 +41,16 @@
 (rashell:define-query query ()
   nil
   (:program #p"/usr/bin/printf" :rest '("%s\\n" "abracadabra" "ABRACADABRA")))
+
+(rashell:define-utility print-environment-witness ()
+  nil
+  (:program #p"/bin/sh"
+   :rest '("-c" "printf '%s' \"${WITNESS}\"")))
+
+(rashell:define-utility print-environment ()
+  nil
+  (:program #p"/usr/bin/env")
+  :trim t)
 
 (define-testcase test-define-command/baseline ()
   (let ((cp
@@ -235,6 +245,28 @@ DabRa" output)
     (assert-string= "abracadabra" (second output))
     (assert-string= "ABRACADABRA" (first output))))
 
+(define-testcase test-environment-witness ()
+  (assert-string= "" (print-environment-witness))
+  (assert-string= "Zatsmi" (print-environment-witness :environment '(("WITNESS" . "Zatsmi"))))
+  (assert-string= "Zatsmi" (print-environment-witness :environment '("WITNESS=Zatsmi"))))
+
+(define-testcase test-environment-path ()
+  (assert-string= "" (print-environment :environment '(:supersede)))
+  (assert-string= (print-environment :environment '(:supersede ("WITNESS" . "Zatsmi")))
+		  "WITNESS=Zatsmi")
+  (assert-string= (print-environment :environment '(:supersede "WITNESS=Zatsmi"))
+		  "WITNESS=Zatsmi")
+  (assert-string-match (print-environment :environment '(:append "WITNESS=Zatsmi"))
+		       "*PATH=*")
+  (assert-string-match (print-environment :environment '("WITNESS=Zatsmi"))
+		       "*PATH=*")
+  (assert-string-match (print-environment :environment '(:append))
+		       "*PATH=*")
+  (assert-string-match (print-environment :environment nil)
+		       "*PATH=*")
+  (assert-string-match (print-environment)
+		       "*PATH=*"))
+
 (define-testcase rashell-testsuite ()
   "Run tests for the rashell module."
   (test-define-command/baseline)
@@ -253,6 +285,8 @@ DabRa" output)
   (test-define-filter-function/array)
   (test-define-filter-macro/stream)
   (test-define-query-function)
-  (test-define-query-macro))
+  (test-define-query-macro)
+  (test-environment-witness)
+  (test-environment-path))
 
 ;;;; End of file `rashell.lisp'

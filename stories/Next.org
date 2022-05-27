@@ -1,0 +1,7 @@
+* Protect environment secrets
+
+** Set a system parameter governing redaction of secrets
+** Set a system parameter allowing to show a part of the secret
+It could be useful to see the first or the last character of a secret
+when troubleshooting.
+** Let commands have a list of environment variables considered as secret

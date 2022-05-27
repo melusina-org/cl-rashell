@@ -1,21 +1,22 @@
 #!/bin/sh
 
-### makedoc -- Make documentation
+# makedoc — Make documentation
 
-# Rashell (https://github.com/michipili/cl-rashell)
-# This file is part of Rashell
+# Rashell (https://github.com/melusina-org/cl-rashell)
+# This file is part of Rashell.
 #
-# Copyright © 2017–2021 Michaël Le Barbier
-#
-# This file must be used under the terms of the MIT license.
+# Copyright © 2017–2022 Michaël Le Barbier
+# All rights reserved.
+
+# This file must be used under the terms of the MIT License.
 # This source file is licensed as described in the file LICENSE, which
 # you should have received as part of this distribution. The terms
-# are also available at
-# https://opensource.org/licenses/MIT
+# are also available at https://opensource.org/licenses/MIT
 
 : ${TOPLEVELDIR:=$(git rev-parse --show-toplevel)}
 : ${subrdir:=${TOPLEVELDIR}/subr}
 : ${makedocdir:=${TOPLEVELDIR}/obj/makedoc}
+: ${makedocsystem:="org.melusina.rashell"}
 
 . "${subrdir}/stdlib.sh"
 
@@ -39,37 +40,39 @@ makedoc_runpatches()
 makedoc_extract()
 {
     makedoc_sbcl \
-	--eval '
-(unless (ql:where-is-system :rashell)
-  (push #p"./" ql:*local-project-directories*))'\
-	--eval '(ql:quickload :rashell)'\
+	--eval "(ql:quickload :${makedocsystem})"\
 	--eval '(with-compilation-unit () (load "libexec/lisp/docstrings.lisp"))' \
-	--eval '(sb-texinfo:generate-includes "obj/makedoc/include/" (list :rashell) :base-package :rashell)' \
+	--eval "(sb-texinfo:generate-includes \
+                 \"obj/makedoc/include/\" \
+                 (list :${makedocsystem}) :base-package :${makedocsystem})" \
 	--eval '(quit)'
 }
 
 makedoc_info()
 (
     cd "${TOPLEVELDIR}/obj/makedoc"
-    makeinfo "${TOPLEVELDIR}/doc/rashell.texinfo"
+    makeinfo "${TOPLEVELDIR}/doc/${makedocsystem}.texinfo"
 )
 
 makedoc_pdf()
 (
     cd "${TOPLEVELDIR}/obj/makedoc"
-    texi2pdf "${TOPLEVELDIR}/doc/rashell.texinfo"
+    texi2pdf "${TOPLEVELDIR}/doc/${makedocsystem}.texinfo"
 )
 
 makedoc_html()
 (
     cd "${TOPLEVELDIR}/obj/makedoc"
-    makeinfo --html --no-split "${TOPLEVELDIR}/doc/rashell.texinfo"
+    makeinfo --html --no-split "${TOPLEVELDIR}/doc/${makedocsystem}.texinfo"
 )
 
 makedoc_main()
 {
-    if [ ! -f "${TOPLEVELDIR}/doc/rashell.texinfo" ]; then
+    if [ ! -f "${TOPLEVELDIR}/doc/${makedocsystem}.texinfo" ]; then
 	1>&2 printf 'Info: makedoc: There is no documentation master file.\n'
+    fi
+    if [ ! -f "${TOPLEVELDIR}/libexec/lisp/docstrings.lisp" ]; then
+	1>&2 printf 'Info: makedoc: Cannot find docstrings lisp utility script.\n'
     fi
     set -e
     makedoc_extract
@@ -81,4 +84,4 @@ makedoc_main()
 
 makedoc_main "$@"
 
-### End of file `makedoc'
+# End of file `makedoc'
