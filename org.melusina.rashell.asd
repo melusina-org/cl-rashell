@@ -15,7 +15,7 @@
   :description "Resilient replicant Shell Programming Library for Common Lisp"
   :author "Michaël Le Barbier"
   :license "MIT"
-  :depends-on ("alexandria" "cl-ppcre" "parse-float")
+  :depends-on ("alexandria" "cl-ppcre" "parse-float" "sb-posix")
   :components
   ((:module "src"
     :components ((:file "package")
