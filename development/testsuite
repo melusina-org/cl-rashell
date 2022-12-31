@@ -38,7 +38,6 @@ testsuite_run()
     testsuite_lisp\
 	--eval "(declaim (optimize safety) (optimize debug))"\
 	--eval "(ql:quickload \"${testsuitesystem}\" :silent t)"\
-	--eval "(org.melusina.confidence:on-assertion-failed-continue)"\
 	--eval "(${testsuitesystem}:$1)"\
 	--eval "(org.melusina.confidence:quit)"
 }
