@@ -275,7 +275,7 @@ If the file does not exist, the test evaluates to NIL."
    :reference "http://pubs.opengroup.org/onlinepubs/9699919799/utilities/mkdir.html"
    :rest (ensure-list pathname-list)))
 
-(define-utility cat (pathname-list)
+(define-query cat (pathname-list)
   nil
   (:program #p"/bin/cat"
    :documentation "Run cat(1) on PATHNAME-LIST."

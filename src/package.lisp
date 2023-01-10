@@ -70,6 +70,10 @@
    #:awk
    #:command-awk
    #:do-awk
+
+   #:cat
+   #:command-cat
+   #:do-cat
    
    ;; POSIX – Free Disk Space
    #:free-disk-space
