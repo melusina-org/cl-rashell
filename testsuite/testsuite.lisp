@@ -17,6 +17,7 @@
   "Run all available tests."
   (util-testsuite)
   (rashell-testsuite)
-  (posix-testsuite))
+  (posix-testsuite)
+  (mktemp-testsuite))
 
 ;;;; End of file `testsuite.lisp'

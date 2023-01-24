@@ -87,6 +87,17 @@
    #:command-df
    #:du
    #:command-du
+
+   ;; Temporary Files and Directory
+   #:*mktemp-keep*
+   #:*mktemp-designator*
+   #:command-make-temporary-file
+   #:command-make-temporary-directory
+   #:make-temporary-file
+   #:make-temporary-directory
+   #:with-temporary-file
+   #:with-temporary-directory
+   
    ))
 
 ;;;; End of file `package.lisp'

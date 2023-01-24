@@ -13,7 +13,7 @@
 
 (in-package #:org.melusina.rashell/testsuite)
 
-(rashell:define-command mkfile (pathname)
+(rashell:define-utility mkfile (pathname)
   ((mode :option "-m" :to-string (lambda (mode) (format nil "~3,'0O" mode))))
   (:program "/usr/bin/install"
    :documentation "Create an empty file with the given mode."
@@ -59,10 +59,9 @@
     (test-with-temporary-file/has-been-removed-p filespec-escaping-scope)))
 
 (defun test-with-temporary-directory/populate (is-directory-p permission path)
-  (rashell:run-tool
-   (if is-directory-p
-       (rashell:mkdir path :mode permission)
-       (mkfile path :mode permission))))
+  (if is-directory-p
+      (rashell:mkdir path :mode permission)
+      (mkfile path :mode permission)))
 
 (define-testcase test-with-temporary-directory ()
   "Test the properties of the temporary directory."
@@ -84,7 +83,7 @@
 					    (:has-exact-permission ,permission))
 					  (merge-pathnames path tmpdir))))))))
 
-(define-testcase test-rashell-mktemp ()
+(define-testcase mktemp-testsuite ()
   "Test Rashell functions built around temporary files and directories."
   (test-with-temporary-file)
   (test-with-temporary-directory))

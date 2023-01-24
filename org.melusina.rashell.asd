@@ -21,7 +21,8 @@
     :components ((:file "package")
 		 (:file "util")
                  (:file "rashell")
-                 (:file "posix")))))
+                 (:file "posix")
+		 (:file "mktemp")))))
 
 (asdf:defsystem #:org.melusina.rashell/testsuite
   :description "Resilient replicant Shell Programming Library for Common Lisp"
@@ -34,6 +35,7 @@
 		 (:file "util")
                  (:file "rashell")
                  (:file "posix")
+		 (:file "mktemp")
                  (:file "testsuite")))))
 
 ;;;; End of file `org.melusina.rashell.asd'

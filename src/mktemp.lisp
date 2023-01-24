@@ -22,39 +22,49 @@ the application that generated them or an issue number.")
 (defparameter *mktemp-keep* nil
   "If set, temporary files and directories are not deleted.")
 
-
 (defun mktemp-template ()
   "A template for temporary files in our application."
-  (let ((filename (if (stringp *mktemp-designator*)
-		      (concatenate 'string *mktemp-designator* ".XXXXXXXX")
-		      "XXXXXXXX"))
+  (let ((filename
+	  (if (stringp *mktemp-designator*)
+	      (concatenate 'string *mktemp-designator* ".XXXXXXXX")
+	      "XXXXXXXX"))
 	(tmpdir (or (uiop:getenv "TMPDIR") "/tmp")))
     (concatenate 'string tmpdir "/" filename)))
 
-(define-command mktemp ()
-  ((directory :flag "-d"))
+(define-utility make-temporary-file () nil
   (:program #p"/usr/bin/mktemp"
    :documentation "Run mktemp(1)."
-   :rest (list (mktemp-template))))
+   :rest (list (mktemp-template)))
+  :trim t)
+
+(define-utility make-temporary-directory () nil
+  (:program #p"/usr/bin/mktemp"
+   :documentation "Run mktemp(1)."
+   :rest (list "-d" (mktemp-template)))
+  :trim t)
 
 (defmacro with-temporary-file ((filespec) &body body)
   "Run BODY commands in a context where FILESPEC is bound to the path of a temporary file."
   (let ((filename (gensym "RASHELL")))
-    `(let* ((,filename (run-tool (mktemp) :trim t))
-	    (,filespec (pathname (copy-seq ,filename))))
+    `(let* ((,filename
+	      (make-temporary-file))
+	    (,filespec
+	      (pathname (copy-seq ,filename))))
        (unwind-protect
 	    (progn ,@body)
 	 (unless *mktemp-keep*
-	   (run-tool (rm ,filename :force t)))))))
+	   (rm ,filename :force t))))))
 
 (defmacro with-temporary-directory ((filespec) &body body)
   "Run BODY commands in a context where FILESPEC is bound to the path of a temporary directory."
   (let ((filename (gensym "RASHELL")))
-    `(let* ((,filename (run-tool (mktemp :directory t) :trim t))
-	    (,filespec (pathname (concatenate 'string ,filename "/"))))
+    `(let* ((,filename
+	      (make-temporary-directory))
+	    (,filespec
+	      (pathname (concatenate 'string ,filename "/"))))
        (unwind-protect
 	    (progn ,@body)
 	 (unless *mktemp-keep*
-	   (run-tool (rm ,filename :force t :recursive t)))))))
+	   (rm ,filename :force t :recursive t))))))
 
 ;;;; End of file `mktemp.lisp'
