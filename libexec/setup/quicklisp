@@ -1,0 +1,228 @@
+#!/bin/sh
+
+# quicklisp — Setup quicklisp
+
+# Rashell (https://github.com/melusina-org/cl-rashell)
+# This file is part of Rashell.
+#
+# Copyright © 2017–2022 Michaël Le Barbier
+# All rights reserved.
+
+# This file must be used under the terms of the MIT License.
+# This source file is licensed as described in the file LICENSE, which
+# you should have received as part of this distribution. The terms
+# are also available at https://opensource.org/licenses/MIT
+
+: ${PACKAGE:='rashell'}
+: ${quicklisp_package:=${PACKAGE}}
+: ${quicklisp_quickstart:='/usr/share/common-lisp/source/quicklisp/quicklisp.lisp'}
+: ${quicklisp_home:="/opt/${quicklisp_package}/var/quicklisp"}
+: ${quicklisp_local:="${quicklisp_home}/local-projects"}
+: ${quicklisp_own:=root}
+: ${quicklisp_group:=root}
+: ${quicklisp_srcdir:="/opt/${quicklisp_package}/var/src"}
+
+#
+# Configuration
+#
+
+quicklisp_configure()
+{
+    if [ -n "${GITHUB_ACTION}" ]; then
+	quicklisp_home="${GITHUB_WORKSPACE}/obj/quicklisp"
+	quicklisp_own="$(id -un)"
+	quicklisp_group="$(id -gn)"
+	quicklisp_local="${quicklisp_home}/local-projects"
+	quicklisp_srcdir="${GITHUB_WORKSPACE}"
+    fi
+}
+
+#
+# Install Quicklisp
+#
+
+quicklisp_install()
+{
+    local homedir
+    eval homedir=~${quicklisp_own}
+
+    trap '
+     quicklisp_remove_install_script
+    ' EXIT TERM KILL
+
+    install -d -o "${quicklisp_own}" -g "${quicklisp_group}"\
+            "${quicklisp_home}"
+
+    quicklisp_prepare_install_script
+    quicklisp_sbcl_load '/tmp/quicklisp-install.lisp'
+
+    install -o "${quicklisp_own}" -g "${quicklisp_group}" /dev/null "${homedir}/.sbclrc"
+    cat > "${homedir}/.sbclrc" <<EOF
+#-:quicklisp
+(let ((quicklisp-init #p"${quicklisp_home}/setup.lisp"))
+  (when (probe-file quicklisp-init)
+    (load quicklisp-init)))
+(let ((srcdir #p"${quicklisp_srcdir}"))
+  (when (probe-file srcdir)
+    (pushnew srcdir ql:*local-project-directories*)))
+EOF
+}
+
+quicklisp_remove_install_script()
+{
+    rm -f /tmp/quicklisp-install.lisp
+}
+
+quicklisp_prepare_install_script()
+{
+    cat > /tmp/quicklisp-install.lisp <<EOF
+(load #p"${quicklisp_quickstart}")
+(quicklisp-quickstart:install :path "${quicklisp_home}/")
+(quit)
+EOF
+}
+
+quicklisp_sbcl_load()
+{
+    sbcl --no-userinit --load "$1"
+}
+
+#
+# Load Packages
+#
+
+quicklisp_load()
+{
+    if [ $# -eq 0 ]; then
+	return
+    fi
+
+    trap '
+     : quicklisp_remove_load_script
+    ' EXIT TERM KILL
+
+    quicklisp_prepare_load_script "$@"
+    quicklisp_sbcl_load '/tmp/quicklisp-load.lisp'
+}
+
+quicklisp_remove_load_script()
+{
+    rm -f /tmp/quicklisp-load.lisp
+}
+
+quicklisp_prepare_load_script()
+{
+    local packages
+
+    packages=$(printf ' "%s"' "$@")
+    packages="${packages# }"
+
+    cat > /tmp/quicklisp-load.lisp <<EOF
+#-:quicklisp
+(let ((quicklisp-init #p"${quicklisp_home}/setup.lisp"))
+  (when (probe-file quicklisp-init)
+    (load quicklisp-init)))
+(ql:quickload '(${packages}))
+(quit)
+EOF
+}
+
+
+#
+# Register Local Projects
+#
+
+quicklisp_register_local_projects()
+{
+    trap '
+     quicklisp_remove_register_script
+    ' EXIT TERM KILL
+
+    quicklisp_prepare_register_script
+
+    install -d -o "${quicklisp_own}" -g "${quicklisp_group}"\
+            "${quicklisp_local}"
+
+    chown -R "${quicklisp_own}:${quicklisp_group}"\
+          "${quicklisp_home}/local-projects"
+
+    quicklisp_sbcl_load '/tmp/quicklisp-register.lisp'
+}
+
+quicklisp_remove_register_script()
+{
+    rm -f /tmp/quicklisp-register.lisp
+}
+
+quicklisp_prepare_register_script()
+{
+    cat > /tmp/quicklisp-register.lisp <<EOF
+#-:quicklisp
+(let ((quicklisp-init #p"${quicklisp_home}/setup.lisp"))
+  (when (probe-file quicklisp-init)
+    (load quicklisp-init)))
+(ql:register-local-projects)
+(quit)
+EOF
+}
+
+quicklisp_describe()
+{
+    cat <<EOF
+QuickLisp Package: ${quicklisp_package}
+QuickLisp QuickStart: ${quicklisp_quickstart}
+QuickLisp Home: ${quicklisp_home}
+QuickLisp Local: ${quicklisp_local}
+QuickLisp Owner: ${quicklisp_own}
+QuickLisp Group: ${quicklisp_group}
+EOF
+}
+
+quicklisp_main()
+{
+    local OPTIND OPTARG OPTION action
+    OPTIND=1
+
+    action='all'
+
+    while getopts "o:g:lri" OPTION; do
+        case "${OPTION}" in
+            o)	quicklisp_own="${OPTARG}";;
+            g)	quicklisp_group="${OPTARG}";;
+            l)	action='load';;
+            r)	action='register';;
+            i)	action='install';;
+            *)	exit 64;;
+        esac
+    done
+
+    shift $((OPTIND - 1))
+
+    quicklisp_configure
+
+    case "${action}" in
+        all)
+            quicklisp_install
+            quicklisp_register_local_projects
+            quicklisp_load "$@"
+            ;;
+        install)
+            quicklisp_install
+            ;;
+        register)
+            quicklisp_register_local_projects
+            ;;
+        load)
+            quicklisp_load "$@"
+            ;;
+	describe)
+	    quicklisp_describe "$@"
+	    ;;
+        *)
+            exit 70
+    esac
+}
+
+quicklisp_main "$@"
+
+# End of file `quicklisp'

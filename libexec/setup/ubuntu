@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# lint — Linter for Rashell
+# ubuntu — Setup Ubuntu workstation to build and test Rashell
 
 # Rashell (https://github.com/melusina-org/cl-rashell)
 # This file is part of Rashell.
@@ -13,27 +13,12 @@
 # you should have received as part of this distribution. The terms
 # are also available at https://opensource.org/licenses/MIT
 
-: ${TOPLEVELDIR:=$(git rev-parse --show-toplevel)}
-
-lint_sbcl()
+main()
 {
-    sbcl --noinform "$@"
+    apt update
+    apt install sbcl cl-quicklisp texinfo texlive
 }
 
-lint_main()
-{
-    lint_sbcl --load "${TOPLEVELDIR}/libexec/lisp/setup.lisp"\
-	      --eval '(org.melusina.atelier:lint
- #p"src"
- #p"testsuite"
- #p"development"
- #p"subr"
- #p"libexec/lisp/setup.lisp"
- #p"libexec/setup/"
- #p"org.melusina.rashell.asd"
-)'
-}
+main "$@"
 
-lint_main "$@"
-
-# End of file `lint'
+# End of file `ubuntu'
