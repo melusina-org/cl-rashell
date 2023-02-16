@@ -19,8 +19,6 @@
 
 (ql:quickload "org.melusina.atelier" :silent t)
 
-(org.melusina.atelier:initialise)
-
 (setf org.melusina.atelier:*parameter-bindings*
       '((:copyright-holder . "Michaël Le Barbier")
  	(:copyright-year . "2017–2022")
