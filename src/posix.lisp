@@ -168,10 +168,15 @@ If the file does not exist, the test evaluates to NIL."
   (declare (ignore environment))
   (let (stat)
     (handler-case
-        (let ((current (when directory (uiop:getcwd))))
-          (when directory (uiop:chdir directory))
-          (setf stat (if follow (sb-posix:lstat pathname) (sb-posix:stat pathname)))
-          (when current (uiop:chdir current)))
+        (let ((current
+		(when directory
+		  (uiop:getcwd))))
+          (when directory
+	    (uiop:chdir directory))
+          (setf stat
+		(if follow (sb-posix:lstat pathname) (sb-posix:stat pathname)))
+          (when current
+	    (uiop:chdir current)))
       (sb-posix:syscall-error (condition)
         (declare (ignore condition))
         (setf stat nil)))

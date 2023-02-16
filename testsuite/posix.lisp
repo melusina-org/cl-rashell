@@ -18,13 +18,44 @@
 ;;;; Rashell POSIX Interface
 ;;;;
 
-(define-testcase test-posix/find-expr ()
+(define-testcase testsuite-find-expr ()
   (assert-equal
    '("(" "-not" "(" "-name" "*.c" ")" ")" "-and" "(" "-print" ")")
-   (rashell::find-predicate-to-argv '(:and (:not (:name "*.c")) :print))))
+   (rashell::find-predicate-to-argv
+    '(:and (:not (:name "*.c")) :print))))
+
+(define-testcase testsuite-test ()
+  (rashell:with-temporary-file (oldfile)
+    (rashell:with-temporary-file (newfile)
+      (sb-posix:chmod newfile #o755)
+      (assert-t (rashell:test
+		 '(:has-kind :regular) oldfile))
+      (assert-t (rashell:test
+		 `(:is-newer-than ,oldfile) newfile))
+      (assert-t (rashell:test
+		 '(:has-at-least-permission #o755) newfile))
+      (assert-t (rashell:test
+		 `(:and
+		   (:has-kind :regular) 
+		   (:is-newer-than ,oldfile)
+		   (:has-at-least-permission #o755))
+		 newfile))
+      (assert-nil (rashell:test
+		   `(:and
+		     (:has-kind :regular) 
+		     (:is-newer-than ,newfile)
+		     (:has-at-least-permission #o755))
+		   oldfile))
+      (assert-t (rashell:test
+		   `(:or
+		     (:has-kind :regular) 
+		     (:is-newer-than ,newfile)
+		     (:has-at-least-permission #o755))
+		   oldfile)))))
 
 (define-testcase posix-testsuite ()
   "Run tests for the posix module."
-  (test-posix/find-expr))
+  (testsuite-find-expr)
+  (testsuite-test))
 
 ;;;; End of file `posix.lisp'
