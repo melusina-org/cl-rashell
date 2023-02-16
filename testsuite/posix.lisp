@@ -33,7 +33,11 @@
       (assert-t (rashell:test
 		 `(:is-newer-than ,oldfile) newfile))
       (assert-t (rashell:test
+		 '(:has-exact-permission #o755) newfile))
+      (assert-t (rashell:test
 		 '(:has-at-least-permission #o755) newfile))
+      (assert-t (rashell:test
+		 '(:has-at-least-permission #o700) newfile))
       (assert-t (rashell:test
 		 `(:and
 		   (:has-kind :regular) 

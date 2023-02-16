@@ -223,9 +223,13 @@ If the file does not exist, the test evaluates to NIL."
               (<= (sb-posix:stat-mtime (sb-posix:stat (second predicate-form)))
                   (sb-posix:stat-mtime stat)))
              (:has-exact-permission
-              (eq (logandc2 (sb-posix:stat-mode stat) sb-posix:s-ifmt) (second predicate-form)))
+              (eq (logandc2 (sb-posix:stat-mode stat) sb-posix:s-ifmt)
+		  (logandc2 (second predicate-form) sb-posix:s-ifmt)))
              (:has-at-least-permission
-              (eq (logandc2 (sb-posix:stat-mode stat) sb-posix:s-ifmt) (second predicate-form)))
+              (eq (logand
+		   (logandc2 (sb-posix:stat-mode stat) sb-posix:s-ifmt)
+		   (logandc2 (second predicate-form) sb-posix:s-ifmt))
+		  (logandc2 (second predicate-form) sb-posix:s-ifmt)))
              (:name
               (or
                (string-match (second predicate-form) pathname)
