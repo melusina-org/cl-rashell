@@ -135,13 +135,13 @@ The current state of the external program can be examined with the methods
       (flag
        `(when ,argument (list ,flag)))
       ((and option to-string (getf spec :multiple))
-       `(loop for single-argument in (ensure-list ,argument)
-              collect ,option
-              collect (funcall ,to-string single-argument)))
+       `(loop :for single-argument :in (ensure-list ,argument)
+              :collect ,option
+              :collect (funcall ,to-string single-argument)))
       ((and option (getf spec :multiple))
-       `(loop for single-argument in (ensure-list ,argument)
-              collect ,option
-              collect single-argument))
+       `(loop :for single-argument :in (ensure-list ,argument)
+              :collect ,option
+              :collect single-argument))
       ((and option to-string (not (getf spec :multiple)))
        `(when ,argument
           (list ,option (funcall ,to-string ,argument))))
@@ -589,8 +589,8 @@ read_input_line()
   fi
 }
 ")
-         (loop for clause in clauses
-               do
+         (loop :for clause :in clauses
+               :do
                (case (first clause)
                  (:sleep
                   (format *standard-output* "sleep ~A~%" (second clause)))
@@ -798,12 +798,12 @@ is construced by prefixing COMMAND- to the provided NAME."
 	 (defun-argv
 	   (define-command/defun-argv argv options))
 	 (invocation-argv
-	   (loop for argv in (define-command/defun-argv argv options)
-		 for seen-keys = nil then (or seen-keys (eq argv '&key))
-		 unless (eq argv '&key)
-		 append (if seen-keys
-			    (list (make-keyword argv) argv)
-			    (list argv)))))
+	   (loop :for argv :in (define-command/defun-argv argv options)
+		 :for seen-keys = nil :then (or seen-keys (eq argv '&key))
+		 :unless (eq argv '&key)
+		 :append (if seen-keys
+			     (list (make-keyword argv) argv)
+			     (list argv)))))
     `(progn
        (define-command ,command-name ,argv ,options ,spec)
        (defun ,utility-name ,defun-argv
@@ -839,24 +839,24 @@ is construced by prefixing COMMAND- to the provided NAME."
                (funcall object-of-output-line (read-line output-stream))
                (read-line output-stream)))
          (read-error ()
-           (loop for error-char = (read-char-no-hang error-stream)
-                 while error-char
-                 do (write-char error-char accumulated-error))))
-      (loop while (or (open-stream-p output-stream) (open-stream-p error-stream))
-            do (handler-case
-                   (when (open-stream-p error-stream)
-                     (read-error))
-                 (end-of-file (condition)
-                   (declare (ignore condition))
-                   (close error-stream)))
-            do (handler-case
-                   (when (and (open-stream-p output-stream) (is-output-available-p))
-                     (let ((object (read-output-line)))
-                       (unless (eq :drop object) 
-                         (funcall process-one-line object))))
-                 (end-of-file (condition)
-                   (declare (ignore condition))
-                   (close output-stream))))
+           (loop :for error-char = (read-char-no-hang error-stream)
+                 :while error-char
+                 :do (write-char error-char accumulated-error))))
+      (loop :while (or (open-stream-p output-stream) (open-stream-p error-stream))
+            :do (handler-case
+                    (when (open-stream-p error-stream)
+                      (read-error))
+                  (end-of-file (condition)
+                    (declare (ignore condition))
+                    (close error-stream)))
+            :do (handler-case
+                    (when (and (open-stream-p output-stream) (is-output-available-p))
+                      (let ((object (read-output-line)))
+			(unless (eq :drop object) 
+                          (funcall process-one-line object))))
+                  (end-of-file (condition)
+                    (declare (ignore condition))
+                    (close output-stream))))
       (wait-command command)
       (multiple-value-bind (status code) (command-status command)
         (cond
@@ -903,12 +903,12 @@ is construced by prefixing COMMAND- to the provided NAME."
 	 (defun-argv
 	   (define-command/defun-argv argv options))
 	 (invocation-argv
-	   (loop for argv in (define-command/defun-argv argv options)
-		 for seen-keys = (eq argv '&key) then (or seen-keys (eq argv '&key))
-		 unless (eq argv '&key)
-		 append (if seen-keys
-			    (list (make-keyword argv) argv)
-			    (list argv)))))
+	   (loop :for argv in (define-command/defun-argv argv options)
+		 :for seen-keys = (eq argv '&key) :then (or seen-keys (eq argv '&key))
+		 :unless (eq argv '&key)
+		 :append (if seen-keys
+			     (list (make-keyword argv) argv)
+			     (list argv)))))
     (with-unique-names (command)
       `(progn
 	 (define-command ,command-name ,argv ,options ,spec)
@@ -945,22 +945,22 @@ is construced by prefixing COMMAND- to the provided NAME."
                (funcall object-of-output-line (read-line output-stream))
                (read-line output-stream)))
          (read-error ()
-           (loop for error-char = (read-char-no-hang error-stream)
-                 while error-char
-                 do (write-char error-char accumulated-error))))
-      (loop while (or (open-stream-p output-stream) (open-stream-p error-stream))
-            do (handler-case
-                   (when (open-stream-p error-stream)
-                     (read-error))
-                 (end-of-file (condition)
-                   (declare (ignore condition))
-                   (close error-stream)))
-            do (handler-case
-                   (when (and (open-stream-p output-stream) (is-output-available-p))
-                     (funcall process-one-line (read-output-line)))
-                 (end-of-file (condition)
-                   (declare (ignore condition))
-                   (close output-stream))))
+           (loop :for error-char = (read-char-no-hang error-stream)
+                 :while error-char
+                 :do (write-char error-char accumulated-error))))
+      (loop :while (or (open-stream-p output-stream) (open-stream-p error-stream))
+            :do (handler-case
+                    (when (open-stream-p error-stream)
+                      (read-error))
+                  (end-of-file (condition)
+                    (declare (ignore condition))
+                    (close error-stream)))
+            :do (handler-case
+                    (when (and (open-stream-p output-stream) (is-output-available-p))
+                      (funcall process-one-line (read-output-line)))
+                  (end-of-file (condition)
+                    (declare (ignore condition))
+                    (close output-stream))))
       (wait-command command)
       (multiple-value-bind (status code) (command-status command)
         (cond
@@ -1006,14 +1006,14 @@ When INPUT is an array, the returned value is an array of strings."
   (labels
       ((stream-of-string-list (lines)
          (let ((buffer (make-string-output-stream)))
-           (loop for line in lines
-                 do (write-line line buffer))
+           (loop :for line :in lines
+                 :do (write-line line buffer))
            (make-string-input-stream
             (get-output-stream-string buffer))))
        (stream-of-string-array (lines)
          (let ((buffer (make-string-output-stream)))
-           (loop for line across lines
-                 do (write-line line buffer))
+           (loop :for line :across lines
+                 :do (write-line line buffer))
            (make-string-input-stream
             (get-output-stream-string buffer))))
        (array-of-list (list)
@@ -1060,12 +1060,12 @@ is construced by prefixing COMMAND- to the provided NAME."
 	 (do-argv
 	   (define-command/defun-argv argv options))
 	 (invocation-argv
-	   (loop for argv in (define-command/defun-argv argv options)
-		 for seen-keys = nil then (or seen-keys (eq argv '&key))
-		 unless (eq argv '&key)
-		 append (if seen-keys
-			    (list (make-keyword argv) argv)
-			    (list argv)))))
+	   (loop :for argv :in (define-command/defun-argv argv options)
+		 :for seen-keys = nil :then (or seen-keys (eq argv '&key))
+		 :unless (eq argv '&key)
+		 :append (if seen-keys
+			     (list (make-keyword argv) argv)
+			     (list argv)))))
     (with-unique-names (command)
       `(progn
 	 (define-command ,command-name ,argv ,options ,spec)
