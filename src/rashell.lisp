@@ -668,22 +668,31 @@ command meets an error condition."))
 ;;;; Utility Operation
 ;;;;
 
-(defun run-utility (command &key trim)
+(defun run-utility (command &key trim broadcast)
   "Run COMMAND as a utility.
 Start an external process running COMMAND, without standard input. Return
 the accumulated standard output and standard error as multiple values.
 
 When TRIM is set to T, trailing whitespace is removed from the program standard output."
-  (let ((accumulated-output (make-string-output-stream))
-        (accumulated-error (make-string-output-stream)))
+  (let ((accumulated-output
+	  (make-string-output-stream))
+        (accumulated-error
+	  (make-string-output-stream)))
     (labels
-        ((finalise-accumulated-output (output)
+        ((maybe-broadcast (output-stream)
+	   (if broadcast
+	       (make-broadcast-stream broadcast output-stream)
+	       output-stream))
+	 (finalise-accumulated-output (output)
            (if trim
                (string-right-trim '(#\Space #\Newline) output)
                output)))
       (multiple-value-bind (status code)
           (progn
-            (run-command command :output accumulated-output :error accumulated-error :input nil)
+            (run-command command
+			 :output (maybe-broadcast accumulated-output)
+			 :error (maybe-broadcast accumulated-error)
+			 :input nil)
             (wait-command command)
             (command-status command))
         (if (and (eq status :exited) (eq code 0))
