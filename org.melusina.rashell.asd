@@ -3,7 +3,7 @@
 ;;;; Rashell (https://github.com/melusina-org/cl-rashell)
 ;;;; This file is part of Rashell.
 ;;;;
-;;;; Copyright © 2017–2022 Michaël Le Barbier
+;;;; Copyright © 2017–2023 Michaël Le Barbier
 ;;;; All rights reserved.
 
 ;;;; This file must be used under the terms of the MIT License.
@@ -37,5 +37,14 @@
                  (:file "posix")
 		 (:file "mktemp")
                  (:file "testsuite")))))
+
+(asdf:defsystem #:org.melusina.rashell/development
+  :description "Development tools for Rashell"
+  :author "Michaël Le Barbier"
+  :license "MIT License"
+  :depends-on (#:org.melusina.atelier)
+  :components
+  ((:module "libexec/lisp"
+    :components ((:file "development")))))
 
 ;;;; End of file `org.melusina.rashell.asd'
