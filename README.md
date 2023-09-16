@@ -7,11 +7,10 @@ patterns to interact with UNIX utilities as subprocesses. These
 patterns usually yield a string or a sequence of lines, they will also
 adequately report error conditions on subprocesses.
 
+[![Continuous Integration](https://github.com/melusina-org/cl-rashell/actions/workflows/continuous-integration.yaml/badge.svg)](https://github.com/melusina-org/cl-rashell/actions/workflows/continuous-integration.yaml)
 
-## License
-
-The **Rashell** package is a free software distributed under the terms
-of the [MIT license](./LICENSE).
+*This software is Copyright © 2017–2023 Michaël Le Barbier and
+is distributed under the terms described in the LICENSE file.*
 
 
 ## Compatibility
