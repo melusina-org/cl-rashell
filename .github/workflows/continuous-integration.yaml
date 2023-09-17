@@ -5,9 +5,3 @@ on:
 jobs:
   continuous-integration:
     uses: melusina-org/reusable/.github/workflows/lisp-continuous-integration.yaml@support-parameters
-    with:
-      main-system: 'org.melusina.rashell'
-      testsuite-system: 'org.melusina.rashell/testsuite'
-      testsuite-entrypoint: 'run-all-tests'
-      linter-system: 'org.melusina.rashell/development'
-      linter-entrypoint: 'lint'
