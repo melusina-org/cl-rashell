@@ -4,7 +4,7 @@ on:
   - push
 jobs:
   continuous-integration:
-    uses: melusina-org/reusable/.github/workflows/lisp-continuous-integration.yaml@main
+    uses: melusina-org/reusable/.github/workflows/lisp-continuous-integration.yaml@support-parameters
     with:
       main-system: 'org.melusina.rashell'
       testsuite-system: 'org.melusina.rashell/testsuite'
