@@ -1,0 +1,31 @@
+main-system: 'org.melusina.rashell'
+unit-tests:
+  system: 'org.melusina.rashell/testsuite'
+  entrypoint: 'run-all-tests'
+#component-tests:
+#deployment-tests:
+linter:
+  system: 'org.melusina.rashell/development'
+  entrypoint: 'lint'
+
+fast:
+  os:
+    - ubuntu-latest
+  implementation:
+    - sbcl
+tier-1:
+  os:
+    - ubuntu-latest
+    - macos-latest
+  implementation:
+    - sbcl
+    - abcl
+tier-2:
+  os:
+    - ubuntu-latest
+    - macos-latest
+  implementation:
+    - ccl
+    - ecl
+    - gcl
+    - clisp
