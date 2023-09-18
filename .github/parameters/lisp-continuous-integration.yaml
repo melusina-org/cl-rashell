@@ -19,13 +19,13 @@ tier-1:
     - macos-latest
   implementation:
     - sbcl
-    - abcl
 tier-2:
   os:
     - ubuntu-latest
     - macos-latest
   implementation:
+    - abcl
     - ccl
+    - clisp
     - ecl
     - gcl
-    - clisp
