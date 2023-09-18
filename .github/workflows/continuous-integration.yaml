@@ -4,5 +4,5 @@ on:
   - push
 jobs:
   continuous-integration:
+    name: 'Lisp Continuous Integration'
     uses: melusina-org/reusable/.github/workflows/lisp-continuous-integration.yaml@v1
-
