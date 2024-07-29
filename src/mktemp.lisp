@@ -56,7 +56,7 @@ the application that generated them or an issue number.")
 	   (rm ,filename :force t))))))
 
 (defmacro with-temporary-directory ((filespec) &body body)
-  "Run BODY commands in a context where FILESPEC is bound to the path of a temporary directory."
+  "Run BODY commands in a context where FILESPEC is bound to the pathname of a temporary directory."
   (let ((filename (gensym "RASHELL")))
     `(let* ((,filename
 	      (make-temporary-directory))
