@@ -15,6 +15,7 @@
 
 : ${TOPLEVELDIR:=$(git rev-parse --show-toplevel)}
 : ${testsuitesystem:="org.melusina.rashell/testsuite"}
+: ${testsuitepackage:=${testsuitesystem#'org.melusina.'}}
 : ${testsuiteclean:='no'}
 : ${testsuitelisp:='sbcl'}
 
@@ -38,8 +39,8 @@ testsuite_run()
     testsuite_lisp\
 	--eval "(declaim (optimize safety) (optimize debug))"\
 	--eval "(ql:quickload \"${testsuitesystem}\" :silent t)"\
-	--eval "(${testsuitesystem}:$1)"\
-	--eval "(org.melusina.confidence:quit)"
+	--eval "(${testsuitepackage}:$1)"\
+	--eval "(confidence:quit)"
 }
 
 testsuite_main()

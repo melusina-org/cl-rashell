@@ -11,7 +11,7 @@
 ;;;; you should have received as part of this distribution. The terms
 ;;;; are also available at https://opensource.org/licenses/MIT
 
-(defpackage #:org.melusina.rashell
+(defpackage #:rashell
   (:use #:common-lisp)
   (:import-from #:parse-float
    #:parse-float)

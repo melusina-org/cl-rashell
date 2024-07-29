@@ -11,7 +11,7 @@
 ;;;; you should have received as part of this distribution. The terms
 ;;;; are also available at https://opensource.org/licenses/MIT
 
-(in-package #:org.melusina.rashell)
+(in-package #:rashell)
 
 (defun ensure-list (anything)
   (if (listp anything)

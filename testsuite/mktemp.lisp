@@ -11,7 +11,7 @@
 ;;;; you should have received as part of this distribution. The terms
 ;;;; are also available at https://opensource.org/licenses/MIT
 
-(in-package #:org.melusina.rashell/testsuite)
+(in-package #:rashell/testsuite)
 
 (rashell:define-utility mkfile (pathname)
   ((mode :option "-m" :to-string (lambda (mode) (format nil "~3,'0O" mode))))

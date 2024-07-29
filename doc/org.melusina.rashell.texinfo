@@ -127,14 +127,14 @@ of the command is then @code{:running} and is updated again when the
 external process terminates, with one of the status @code{:exited},
 @code{:stopped} or @code{:signalled}.
 
-@include include/class-org.melusina.rashell-command.texinfo
-@include include/fun-org.melusina.rashell-make-command.texinfo
-@include include/fun-org.melusina.rashell-close-command.texinfo
-@include include/fun-org.melusina.rashell-command-error.texinfo
-@include include/fun-org.melusina.rashell-command-input.texinfo
-@include include/fun-org.melusina.rashell-command-output.texinfo
-@include include/fun-org.melusina.rashell-command-p.texinfo
-@include include/fun-org.melusina.rashell-command-status.texinfo
+@include include/class-rashell-command.texinfo
+@include include/fun-rashell-make-command.texinfo
+@include include/fun-rashell-close-command.texinfo
+@include include/fun-rashell-command-error.texinfo
+@include include/fun-rashell-command-input.texinfo
+@include include/fun-rashell-command-output.texinfo
+@include include/fun-rashell-command-p.texinfo
+@include include/fun-rashell-command-status.texinfo
 
 
 @node Running Commands, Defining Commands, Making Commands, Top
@@ -143,62 +143,62 @@ external process terminates, with one of the status @code{:exited},
 Once created a command can be run according to one of the standard
 interaction patterns: as a utility, a test, a query, a filter.
 
-@include include/fun-org.melusina.rashell-run-utility.texinfo
-@include include/fun-org.melusina.rashell-run-test.texinfo
-@include include/fun-org.melusina.rashell-run-query.texinfo
-@include include/macro-org.melusina.rashell-do-query.texinfo
-@include include/var-org.melusina.rashell-star-query-output-line-number-star.texinfo
-@include include/fun-org.melusina.rashell-run-filter.texinfo
-@include include/macro-org.melusina.rashell-do-filter.texinfo
+@include include/fun-rashell-run-utility.texinfo
+@include include/fun-rashell-run-test.texinfo
+@include include/fun-rashell-run-query.texinfo
+@include include/macro-rashell-do-query.texinfo
+@include include/var-rashell-star-query-output-line-number-star.texinfo
+@include include/fun-rashell-run-filter.texinfo
+@include include/macro-rashell-do-filter.texinfo
 
 The functions @code{run-command}, @code{wait-command} and
 @code{kill-command} can be used to finely control interaction with an
 external program running a command.
 
-@include include/fun-org.melusina.rashell-run-command.texinfo
-@include include/fun-org.melusina.rashell-wait-command.texinfo
-@include include/fun-org.melusina.rashell-kill-command.texinfo
-@include include/condition-org.melusina.rashell-command-error.texinfo
+@include include/fun-rashell-run-command.texinfo
+@include include/fun-rashell-wait-command.texinfo
+@include include/fun-rashell-kill-command.texinfo
+@include include/condition-rashell-command-error.texinfo
 
 
 @node Defining Commands, Predefined Commands, Running Commands, Top
 @chapter Defining Commands
 
-@include include/macro-org.melusina.rashell-define-command.texinfo
-@include include/macro-org.melusina.rashell-define-utility.texinfo
-@include include/macro-org.melusina.rashell-define-test.texinfo
-@include include/macro-org.melusina.rashell-define-query.texinfo
-@include include/macro-org.melusina.rashell-define-filter.texinfo
+@include include/macro-rashell-define-command.texinfo
+@include include/macro-rashell-define-utility.texinfo
+@include include/macro-rashell-define-test.texinfo
+@include include/macro-rashell-define-query.texinfo
+@include include/macro-rashell-define-filter.texinfo
 
 
 @chapter Predefined Commands
 @node Predefined Commands, , Defining Commands, Top
 
 @section Filesystem Utilities
-@include include/fun-org.melusina.rashell-test.texinfo
-@include include/fun-org.melusina.rashell-command-cat.texinfo
-@include include/fun-org.melusina.rashell-command-cp.texinfo
-@include include/fun-org.melusina.rashell-command-df.texinfo
-@include include/fun-org.melusina.rashell-command-du.texinfo
-@include include/fun-org.melusina.rashell-command-find.texinfo
-@include include/fun-org.melusina.rashell-command-ln.texinfo
-@include include/fun-org.melusina.rashell-command-mkdir.texinfo
-@include include/fun-org.melusina.rashell-command-mv.texinfo
-@include include/fun-org.melusina.rashell-command-rm.texinfo
+@include include/fun-rashell-test.texinfo
+@include include/fun-rashell-command-cat.texinfo
+@include include/fun-rashell-command-cp.texinfo
+@include include/fun-rashell-command-df.texinfo
+@include include/fun-rashell-command-du.texinfo
+@include include/fun-rashell-command-find.texinfo
+@include include/fun-rashell-command-ln.texinfo
+@include include/fun-rashell-command-mkdir.texinfo
+@include include/fun-rashell-command-mv.texinfo
+@include include/fun-rashell-command-rm.texinfo
 
 @section Sed & Awk
-@include include/fun-org.melusina.rashell-command-awk.texinfo
-@include include/fun-org.melusina.rashell-command-sed.texinfo
+@include include/fun-rashell-command-awk.texinfo
+@include include/fun-rashell-command-sed.texinfo
 
 @section Temporary Files and Directories
-@include include/var-org.melusina.rashell-star-mktemp-designator-star.texinfo
-@include include/var-org.melusina.rashell-star-mktemp-keep-star.texinfo
-@include include/fun-org.melusina.rashell-command-make-temporary-directory.texinfo
-@include include/fun-org.melusina.rashell-command-make-temporary-file.texinfo
-@include include/macro-org.melusina.rashell-with-temporary-directory.texinfo
-@include include/macro-org.melusina.rashell-with-temporary-file.texinfo
+@include include/var-rashell-star-mktemp-designator-star.texinfo
+@include include/var-rashell-star-mktemp-keep-star.texinfo
+@include include/fun-rashell-command-make-temporary-directory.texinfo
+@include include/fun-rashell-command-make-temporary-file.texinfo
+@include include/macro-rashell-with-temporary-directory.texinfo
+@include include/macro-rashell-with-temporary-file.texinfo
 
 @section Mocking External Programs
-@include include/fun-org.melusina.rashell-arranged-conversation.texinfo
+@include include/fun-rashell-arranged-conversation.texinfo
 
 @bye

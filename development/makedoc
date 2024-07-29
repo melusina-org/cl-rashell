@@ -17,6 +17,7 @@
 : ${subrdir:=${TOPLEVELDIR}/subr}
 : ${makedocdir:=${TOPLEVELDIR}/obj/makedoc}
 : ${makedocsystem:="org.melusina.rashell"}
+: ${makedocpackage:=${makedocsystem#'org.melusina.'}}
 
 . "${subrdir}/stdlib.sh"
 
@@ -44,7 +45,7 @@ makedoc_extract()
 	--eval '(with-compilation-unit () (load "libexec/lisp/docstrings.lisp"))' \
 	--eval "(sb-texinfo:generate-includes \
                  \"obj/makedoc/include/\" \
-                 (list :${makedocsystem}) :base-package :${makedocsystem})" \
+                 (list :${makedocpackage}) :base-package :${makedocpackage})" \
 	--eval '(quit)'
 }
 
